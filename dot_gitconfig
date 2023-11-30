@@ -1,0 +1,22 @@
+[credential]
+  helper = osxkeychain
+[user]
+  name = kazu
+  email = 64774307+kazu-2020@users.noreply.github.com
+[core]
+  editor = vim
+  quotepath = false
+[merge]
+  ff = false
+[pull]
+  ff = only
+[color]
+  ui = auto
+[push]
+  default = current
+[fetch]
+  prune = true
+[ghq]
+  root = ~/repo
+[ghq "https://github.com/kazu-2020"]
+  root = ~/repo/hobby

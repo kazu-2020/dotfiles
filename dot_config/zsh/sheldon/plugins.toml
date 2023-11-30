@@ -1,0 +1,43 @@
+shell = "zsh"
+
+[templates]
+defer = "{{ hooks?.pre | nl }}{% for file in files %}zsh-defer source \"{{ file }}\"\n{% endfor %}{{ hooks?.post | nl }}"
+
+[plugins]
+
+[plugins.zsh-defer]
+github = "romkatv/zsh-defer"
+
+[plugins.fast-syntax-highlighting]
+github = "zdharma/fast-syntax-highlighting"
+apply = ["defer"]
+
+[plugins.zsh-autocomplete]
+github = "marlonrichert/zsh-autocomplete"
+apply = ["defer"]
+
+[plugins.zsh-autosuggestions]
+github = "zsh-users/zsh-autosuggestions"
+apply = ["defer"]
+
+[plugins.zsh-completions]
+github = "zsh-users/zsh-completions"
+
+[plugins.zsh-completions.hooks]
+pre = """
+autoload -U compinit && compinit
+"""
+
+[plugins.zeno]
+github = "yuki-yano/zeno.zsh"
+apply = ["defer"]
+
+[plugins.zeno.hooks]
+pre = "zsh-defer source $ZDOTDIR/hooks/zeno-pre.zsh"
+post = "zsh-defer source $ZDOTDIR/hooks/zeno-post.zsh"
+
+[plugins.myalias]
+inline = "zsh-defer source $ZDOTDIR/hooks/alias.zsh"
+
+[plugins.starship]
+inline = 'eval "$(starship init zsh)"'
