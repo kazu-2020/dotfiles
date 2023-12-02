@@ -2,6 +2,10 @@
 typeset -gU PATH path
 typeset -gU FPATH fpath
 
+export HISTSIZE=2000
+export SAVEHIST=2000
+setopt hist_ignore_dups
+
 path=(
     '/usr/local/bin'(N-/)
     '/usr/bin'(N-/)
