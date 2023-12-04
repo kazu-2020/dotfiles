@@ -1,4 +1,4 @@
-#dotfiles
+# dotfiles
 [chezmoi](https://www.chezmoi.io/)で管理しています。
 MacOS(intel), Ubuntu を想定しています。
 
