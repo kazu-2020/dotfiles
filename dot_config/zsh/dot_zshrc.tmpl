@@ -22,7 +22,9 @@ path=(
 )
 
 ### brew ###
-{{ if eq .chezmoi.os "linux" }}
+{{ if eq .chezmoi.os "darwin" }}
+eval "$(/usr/local/bin/brew shellenv)"
+{{ else if eq .chezmoi.os "linux" }}
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 {{ end }}
 

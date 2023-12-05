@@ -1,7 +1,7 @@
 [user]
   name = kazu
   email = 64774307+kazu-2020@users.noreply.github.com
-{{ if eq .chezmoi.os "darwin" -}}
+{{ if lookPath  "op" j}}
   signingkey = {{ onepasswordRead "op://lsrjwwy2tykh6466oaoyawmtn4/github ssh key/public key" }}
 {{ end }}
 [core]
@@ -18,7 +18,7 @@
 [fetch]
   prune = true
 
-{{ if eq .chezmoi.os "darwin" -}}
+{{ if lookPath  "op" j}}
 [gpg]
   format = ssh
 [gpg "ssh"]
