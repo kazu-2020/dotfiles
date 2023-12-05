@@ -1,7 +1,7 @@
 [user]
   name = kazu
   email = 64774307+kazu-2020@users.noreply.github.com
-{{ if lookPath  "op" j}}
+{{ if lookPath  "op" }}
   signingkey = {{ onepasswordRead "op://lsrjwwy2tykh6466oaoyawmtn4/github ssh key/public key" }}
 {{ end }}
 [core]
@@ -18,7 +18,7 @@
 [fetch]
   prune = true
 
-{{ if lookPath  "op" j}}
+{{ if lookPath  "op" }}
 [gpg]
   format = ssh
 [gpg "ssh"]
