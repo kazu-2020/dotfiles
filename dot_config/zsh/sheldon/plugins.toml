@@ -36,8 +36,12 @@ apply = ["defer"]
 pre = "zsh-defer source $ZDOTDIR/hooks/zeno-pre.zsh"
 post = "zsh-defer source $ZDOTDIR/hooks/zeno-post.zsh"
 
+[plugins.mise]
+inline = "zsh-defer source $ZDOTDIR/hooks/mise.zsh"
+
 [plugins.myalias]
 inline = "zsh-defer source $ZDOTDIR/hooks/alias.zsh"
+
 
 [plugins.starship]
 inline = 'eval "$(starship init zsh)"'
