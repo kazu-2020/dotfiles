@@ -8,6 +8,8 @@ setopt hist_ignore_dups
 
 path=(
     '/usr/local/bin'(N-/)
+    '/usr/local/go/bin'(N-/)
+    "$GOBIN"(N-/)
     '/usr/bin'(N-/)
     '/bin'(N-/)
     '/usr/local/sbin'(N-/)
@@ -56,4 +58,3 @@ fi
 
 source "$sheldon_cache"
 unset sheldon_cache sheldon_toml
-

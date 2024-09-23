@@ -1,0 +1,36 @@
+#! /bin/sh
+GO_VERSION=1.23.1
+
+if command -v go &> /dev/null
+then
+  echo "Go is already installed. 🙆‍♂️"
+  exit 0
+fi
+
+{{ if eq .chezmoi.os "linux" }}
+GO_URL="https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz"
+{{ else if and (eq .chezmoi.os "darwin") (eq .chezmoi.arch "amd64") }}
+GO_URL="https://golang.org/dl/go${GO_VERSION}.darwin-amd64.tar.gz"
+{{ else if and (eq .chezmoi.os "darwin") (eq .chezmoi.arch "arm64") }}
+GO_URL="https://golang.org/dl/go${GO_VERSION}.darwin-arm64.tar.gz"
+{{ else }}
+echo "Go can only be installed on Linux or macOS. 🙏"
+exit 1
+{{ end }}
+
+wget -O /tmp/go.tar.gz $GO_URL || {
+  echo "Failed to download Go 😱"
+  exit 1
+}
+
+sudo tar -C /usr/local -xzf /tmp/go.tar.gz || {
+  echo "Failed to extract Go 😱"
+  exit 1
+}
+
+rm /tmp/go.tar.gz || {
+  echo "Failed to remove Go tarball 😱"
+  exit 1
+}
+
+echo "Go installation completed. 🎉"
