@@ -21,6 +21,14 @@ path=(
     "$path[@]"
 )
 
+### vscode ssh ###
+# vscode ssh 先で code コマンドが利用できるようにするための設定
+if [[ ! -z VSCODE_IPC_HOOK_CLI ]]; then
+    for i in $(ls ~/.vscode-server/bin); do
+        export PATH=$HOME/.vscode-server/bin/$i/bin/remote-cli:$PATH
+    done
+fi
+
 ### brew ###
 {{ if eq .chezmoi.os "darwin" }}
 eval "$(/usr/local/bin/brew shellenv)"
@@ -48,5 +56,4 @@ fi
 
 source "$sheldon_cache"
 unset sheldon_cache sheldon_toml
-
 
