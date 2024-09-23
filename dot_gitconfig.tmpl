@@ -1,9 +1,7 @@
 [user]
   name = kazu
   email = 64774307+kazu-2020@users.noreply.github.com
-{{ if lookPath  "op" }}
-  signingkey = {{ onepasswordRead "op://lsrjwwy2tykh6466oaoyawmtn4/github ssh key/public key" }}
-{{ end }}
+  signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB486XAItBCx6eYRIR7YPq2/V6capw9um7iEtwlzbMa7
 [core]
   editor = nvim
   quotepath = false
@@ -18,16 +16,21 @@
 [fetch]
   prune = true
 
-{{ if lookPath  "op" }}
 [gpg]
   format = ssh
-[gpg "ssh"]
-  program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
+
 [commit]
   gpgsign = true
+
+{{ if lookPath "op" }}
+[gpg "ssh"]
+  program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
 {{ end }}
 
 [ghq]
   root = ~/repo
 [ghq "https://github.com/kazu-2020"]
   root = ~/repo/hobby
+
+[init]
+  defaultBranch = main
