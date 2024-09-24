@@ -10,8 +10,8 @@ github = "romkatv/zsh-defer"
 
 [plugins.sync]
 inline = """
-source $ZDOTDIR/hooks/path.zsh
-source $ZDOTDIR/hooks/manager.zsh
+source "$ZDOTDIR/hooks/path.zsh"
+source "$ZDOTDIR/hooks/manager.zsh"
 """
 
 [plugins.fast-syntax-highlighting]
@@ -43,8 +43,8 @@ post = "zsh-defer source $ZDOTDIR/hooks/zeno-post.zsh"
 
 [plugins.async]
 inline = """
-zsh-defer source $ZDOTDIR/hooks/other.zsh
-zsh-defer source $ZDOTDIR/hooks/alias.zsh
+zsh-defer source "$ZDOTDIR/hooks/other.zsh"
+zsh-defer source "$ZDOTDIR/hooks/alias.zsh"
 """
 
 [plugins.starship]
