@@ -1,0 +1,14 @@
+#! /bin/sh
+if command -v aqua &> /dev/null >2&1;
+then
+  echo "aqua is already installed. 🙆‍♂️"
+  exit 0
+fi
+
+echo "Starting Aqua installation..."
+go install github.com/aquaproj/aqua/v2/cmd/aqua@latest || {
+  echo "Failed to install aqua 😱"
+  exit 1
+}
+
+echo "aqua installation completed. 🎉"
