@@ -10,6 +10,7 @@ github = "romkatv/zsh-defer"
 
 [plugins.sync]
 inline = """
+source $ZDOTDIR/hooks/path.zsh
 source $ZDOTDIR/hooks/manager.zsh
 """
 
@@ -23,30 +24,28 @@ apply = ["defer"]
 
 [plugins.zsh-autosuggestions]
 github = "zsh-users/zsh-autosuggestions"
+use = ["{{ name }}.zsh"]
 apply = ["defer"]
 
 [plugins.zsh-completions]
 github = "zsh-users/zsh-completions"
-
 [plugins.zsh-completions.hooks]
 pre = """
-autoload -U compinit && compinit
+autoload -U compinit && zsh-defer compinit
 """
 
 [plugins.zeno]
 github = "yuki-yano/zeno.zsh"
 apply = ["defer"]
-
 [plugins.zeno.hooks]
 pre = "zsh-defer source $ZDOTDIR/hooks/zeno-pre.zsh"
 post = "zsh-defer source $ZDOTDIR/hooks/zeno-post.zsh"
 
-[plugins.mise]
-inline = "zsh-defer source $ZDOTDIR/hooks/mise.zsh"
-
-[plugins.myalias]
-inline = "zsh-defer source $ZDOTDIR/hooks/alias.zsh"
-
+[plugins.async]
+inline = """
+zsh-defer source $ZDOTDIR/hooks/other.zsh
+zsh-defer source $ZDOTDIR/hooks/alias.zsh
+"""
 
 [plugins.starship]
 inline = 'eval "$(starship init zsh)"'

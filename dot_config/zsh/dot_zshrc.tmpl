@@ -1,56 +1,5 @@
-### paths ###
-typeset -gU PATH path
-typeset -gU FPATH fpath
-
-export HISTSIZE=2000
-export SAVEHIST=2000
-setopt hist_ignore_dups
-
-path=(
-    '/usr/local/bin'(N-/)
-    '/usr/local/go/bin'(N-/)
-    "$GOBIN"(N-/)
-    '/usr/bin'(N-/)
-    '/bin'(N-/)
-    '/usr/local/sbin'(N-/)
-    '/usr/sbin'(N-/)
-    '/sbin'(N-/)
-)
-
-path=(
-    "$HOME/.local/bin"(N-/)
-    "$HOME/bin"(N-/)
-    "$path[@]"
-)
-
-### vscode ssh ###
-# vscode ssh 先で code コマンドが利用できるようにするための設定
-if [[ ! -z VSCODE_IPC_HOOK_CLI ]]; then
-    for i in $(ls ~/.vscode-server/bin); do
-        export PATH=$HOME/.vscode-server/bin/$i/bin/remote-cli:$PATH
-    done
-fi
-
-### brew ###
-{{ if eq .chezmoi.os "darwin" }}
-eval "$(/usr/local/bin/brew shellenv)"
-{{ else if eq .chezmoi.os "linux" }}
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-{{ end }}
-
-### volta ###
-export VOLTA_HOME="$HOME/.volta"
-export PATH="$VOLTA_HOME/bin:$PATH"
-
-### sheldon ###
 sheldon_cache="$XDG_CACHE_HOME/sheldon.zsh"
 sheldon_toml="$SHELDON_CONFIG_DIR/plugins.toml"
-
-# ubuntu でパスフレーズの入力画面を出力するためのおまじない
-{{ if eq .chezmoi.os "linux" }}
-export GPG_TTY=$(tty)
-{{ end }}
-
 
 if [[ ! -r "$sheldon_cache" || "$sheldon_toml" -nt "$sheldon_cache" ]]; then
   sheldon source > $sheldon_cache
