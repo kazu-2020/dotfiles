@@ -18,11 +18,6 @@ source "$ZDOTDIR/hooks/manager.zsh"
 github = "zdharma/fast-syntax-highlighting"
 apply = ["defer"]
 
-[plugins.zsh-autosuggestions]
-github = "zsh-users/zsh-autosuggestions"
-use = ["{{ name }}.zsh"]
-apply = ["defer"]
-
 [plugins.zeno]
 github = "yuki-yano/zeno.zsh"
 apply = ["defer"]
