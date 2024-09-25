@@ -9,6 +9,10 @@ fi
 
 GO_URL="https://golang.org/dl/go${GO_VERSION}.{{.chezmoi.os}}-{{.chezmoi.arch}}.tar.gz"
 
+{{ if eq .chezmoi.os "linux" -}}
+sudo apt-get install -y curl
+{{ end }}
+
 curl -Lo /tmp/go.tar.gz $GO_URL || {
   echo "Failed to download Go 😱"
   exit 1

@@ -31,4 +31,11 @@ fi
 
 echo "Starting Homebrew installation..."
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+{{ if eq .chezmoi.os "darwin" }}
+eval "$(/usr/local/bin/brew shellenv)"
+{{ else if eq .chezmoi.os "linux" }}
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+{{ end }}
+
 echo "Homebrew installation completed. 🎉"
