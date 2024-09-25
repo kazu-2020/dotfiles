@@ -18,21 +18,10 @@ source "$ZDOTDIR/hooks/manager.zsh"
 github = "zdharma/fast-syntax-highlighting"
 apply = ["defer"]
 
-[plugins.zsh-autocomplete]
-github = "marlonrichert/zsh-autocomplete"
-apply = ["defer"]
-
 [plugins.zsh-autosuggestions]
 github = "zsh-users/zsh-autosuggestions"
 use = ["{{ name }}.zsh"]
 apply = ["defer"]
-
-[plugins.zsh-completions]
-github = "zsh-users/zsh-completions"
-[plugins.zsh-completions.hooks]
-pre = """
-autoload -U compinit && zsh-defer compinit
-"""
 
 [plugins.zeno]
 github = "yuki-yano/zeno.zsh"
