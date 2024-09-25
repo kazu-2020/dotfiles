@@ -7,18 +7,9 @@ then
   exit 0
 fi
 
-{{ if eq .chezmoi.os "linux" }}
-GO_URL="https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz"
-{{ else if and (eq .chezmoi.os "darwin") (eq .chezmoi.arch "amd64") }}
-GO_URL="https://golang.org/dl/go${GO_VERSION}.darwin-amd64.tar.gz"
-{{ else if and (eq .chezmoi.os "darwin") (eq .chezmoi.arch "arm64") }}
-GO_URL="https://golang.org/dl/go${GO_VERSION}.darwin-arm64.tar.gz"
-{{ else }}
-echo "Go can only be installed on Linux or macOS. 🙏"
-exit 1
-{{ end }}
+GO_URL="https://golang.org/dl/go${GO_VERSION}.{{.chezmoi.os}}-{{.chezmoi.arch}}.tar.gz"
 
-wget -O /tmp/go.tar.gz $GO_URL || {
+curl -Lo /tmp/go.tar.gz $GO_URL || {
   echo "Failed to download Go 😱"
   exit 1
 }
