@@ -10,7 +10,6 @@ github = "romkatv/zsh-defer"
 
 [plugins.sync]
 inline = """
-source "$ZDOTDIR/hooks/path.zsh"
 source "$ZDOTDIR/hooks/manager.zsh"
 """
 

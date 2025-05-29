@@ -1,15 +1,36 @@
+{{ if eq .chezmoi.os "darwin" -}}
 # Amazon Q pre block. Keep at the top of this file.
 [[ -f "${HOME}/Library/Application Support/amazon-q/shell/zshrc.pre.zsh" ]] && builtin source "${HOME}/Library/Application Support/amazon-q/shell/zshrc.pre.zsh"
+{{- end }}
 
-sheldon_cache="$XDG_CACHE_HOME/sheldon.zsh"
-sheldon_toml="$SHELDON_CONFIG_DIR/plugins.toml"
+typeset -gU PATH path
+typeset -gU FPATH fpath
 
-if [[ ! -r "$sheldon_cache" || "$sheldon_toml" -nt "$sheldon_cache" ]]; then
-  sheldon source > $sheldon_cache
-fi
+setopt hist_ignore_dups
 
-source "$sheldon_cache"
-unset sheldon_cache sheldon_toml
+path=(
+    '/usr/local/bin'(N-/)
+    '/usr/local/go/bin'(N-/)
+    '/usr/bin'(N-/)
+    '/bin'(N-/)
+    '/usr/local/sbin'(N-/)
+    '/usr/sbin'(N-/)
+    '/sbin'(N-/)
+)
 
+path=(
+    "$HOME/.local/bin"(N-/)
+    "$GOBIN"(N-/)
+    "$HOME/bin"(N-/)
+    "$path[@]"
+)
+
+### brew ###
+eval "$({{ .brew.path  }} shellenv)"
+
+eval "$(sheldon source)"
+
+{{ if eq .chezmoi.os "darwin" -}}
 # Amazon Q post block. Keep at the bottom of this file.
 [[ -f "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh" ]] && builtin source "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh"
+{{ end -}}
