@@ -11,7 +11,7 @@ fi
   exit 0
 {{- end }}
 
-{{- if eq .chezmoi.os "linux" -}}
+{{ if eq .chezmoi.os "linux" -}}
 REQUIRED_PACKAGES="build-essential procps curl file git"
 MISSING_PACKAGES=""
 
