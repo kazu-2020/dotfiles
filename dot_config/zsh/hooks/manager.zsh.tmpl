@@ -1,17 +1,8 @@
 ### brew ###
-{{ if eq .chezmoi.os "darwin" }}
-eval "$(/usr/local/bin/brew shellenv)"
-{{ else if eq .chezmoi.os "linux" }}
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-{{ end }}
+eval "$({{ .brew.path  }} shellenv)"
 
 ### mise ###
 eval "$(mise activate zsh)"
 
 ### volta ###
 export PATH="$VOLTA_HOME/bin:$PATH"
-
-# aqua が 他のパッケージマネージャよりも呼ばれるようにする
-# https://zenn.dev/shunsuke_suzuki/books/aqua-handbook/viewer/tips#asdf-%E3%81%AA%E3%81%A9%E3%81%A8%E4%BD%B5%E7%94%A8%E3%81%99%E3%82%8B%E5%A0%B4%E5%90%88%E3%81%AE%E6%B3%A8%E6%84%8F%E7%82%B9
-### aqua ###
-export PATH="$(aqua root-dir)/bin:$PATH"
