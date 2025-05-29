@@ -6,22 +6,29 @@ if ! command -v brew >/dev/null 2>&1; then
 fi
 
 {{ if eq .chezmoi.os "darwin" -}}
-brew bundle --verbose --no-lock --file=/dev/stdin <<EOF
-{{ range .packages.brews.common -}}
+brew bundle --verbose --file=/dev/stdin <<EOF
+{{ range .brew.packages.common -}}
 brew {{ . | quote }}
 {{ end -}}
-{{ range .packages.casks -}}
+{{ range .brew.packages.cask.common -}}
 cask {{ . | quote }}
 {{ end -}}
+
+{{ if promptBool "Do you want to install external casks?" -}}
+{{ range .brew.packages.cask.external -}}
+cask {{ . | quote }}
+{{ end -}}
+{{ end -}}
+
 EOF
 {{ end -}}
 
 {{ if eq .chezmoi.os "linux" -}}
-brew bundle --verbose --no-lock --file=/dev/stdin <<EOF
-{{ range .packages.brews.common -}}
+brew bundle --verbose --file=/dev/stdin <<EOF
+{{ range .brew.packages.common -}}
 brew {{ . | quote }}
 {{ end -}}
 EOF
-{{ end -}}
+{{ end }}
 
 echo "Homebrew packages installation completed successfully 🎉"

@@ -1,8 +1,64 @@
+# see: https://www.chezmoi.io/reference/configuration-file/variables/
+
+progress = true
+
+[data.brew.packages]
+  common = [
+   "sheldon",
+    "deno",
+    "mise",
+    "bat",
+    "fd",
+    "fzf",
+    "git",
+    "ghq",
+    "starship",
+    "neovim",
+    "jq",
+    "tree"
+  ]
+  cask.common = [
+   "1password",
+   "1password-cli",
+   "font-plemol-jp-nf",
+   "visual-studio-code",
+   "iterm2"
+  ]
+  cask.external = [
+    "alt-tab",
+    "amazon-q",
+    "arc",
+    "cleanshot",
+    "deepl",
+    "notion",
+    "raycast",
+    "session-manager-plugin"
+  ]
+
+{{- if eq .chezmoi.os "linux" }}
+[data.brew]
+  path = "/home/linuxbrew/.linuxbrew/bin/brew"
+{{- end }}
+
+{{- if (and (eq .chezmoi.os "darwin") (eq .chezmoi.arch "arm64")) }}
+# Apple シリコン
+[data.brew]
+  path = "/opt/homebrew/bin/brew"
+{{- end }}
+
+{{- if (and (eq .chezmoi.os "darwin") (eq .chezmoi.arch "amd64")) }}
+# Intel Mac
+[data.brew]
+  path = "/usr/local/bin/brew"
+{{- end }}
+  
+
 [edit]
 {{ if lookPath "nvim" }}
   command = "nvim"
 {{ else if lookPath "vim" }}
   command = "vim"
 {{ end }}
+
 [diff]
   exclude = ["scripts"]

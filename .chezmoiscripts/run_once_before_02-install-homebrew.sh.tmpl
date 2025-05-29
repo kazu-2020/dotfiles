@@ -6,13 +6,12 @@ then
   exit 0
 fi
 
-{{ if not (eq .chezmoi.os "darwin" "linux") }}
-  echo ""Homebrew can only be installed on Linux or macOS."
+{{- if not (eq .chezmoi.os "darwin" "linux") }}
+  echo "Homebrew can only be installed on Linux or macOS."
   exit 0
-{{ end }}
+{{- end }}
 
-
-{{ if eq .chezmoi.os "linux" -}}
+{{- if eq .chezmoi.os "linux" -}}
 REQUIRED_PACKAGES="build-essential procps curl file git"
 MISSING_PACKAGES=""
 
@@ -26,16 +25,11 @@ if [ ! -z "$MISSING_PACKAGES" ]; then
     echo "Installing missing packages: $MISSING_PACKAGES"
     sudo apt-get install -y $MISSING_PACKAGES
 fi
-{{ end }}
+{{- end }}
 
 
 echo "Starting Homebrew installation..."
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-{{ if eq .chezmoi.os "darwin" }}
-eval "$(/usr/local/bin/brew shellenv)"
-{{ else if eq .chezmoi.os "linux" }}
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-{{ end }}
+eval "$({{ .brew.path  }} shellenv)"
 
 echo "Homebrew installation completed. 🎉"
