@@ -22,15 +22,11 @@
 [commit]
   gpgsign = true
 
-{{ if lookPath "op" }}
 [gpg "ssh"]
   program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
-{{ end }}
 
 [ghq]
   root = ~/repo
-[ghq "https://github.com/kazu-2020"]
-  root = ~/repo/hobby
 
 [init]
   defaultBranch = main
