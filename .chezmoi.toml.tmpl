@@ -24,6 +24,7 @@ progress = true
    "visual-studio-code",
    "iterm2"
   ]
+  {{ if promptBool "Do you want to install external casks" -}}
   cask.external = [
     "alt-tab",
     "amazon-q",
@@ -34,6 +35,9 @@ progress = true
     "raycast",
     "session-manager-plugin"
   ]
+  {{ else -}}
+  cask.external = []
+  {{ end -}}
 
 {{- if eq .chezmoi.os "linux" }}
 [data.brew]

@@ -14,10 +14,8 @@ brew {{ . | quote }}
 cask {{ . | quote }}
 {{ end -}}
 
-{{ if promptBool "Do you want to install external casks?" -}}
 {{ range .brew.packages.cask.external -}}
 cask {{ . | quote }}
-{{ end -}}
 {{ end -}}
 
 EOF
