@@ -13,16 +13,37 @@ inline = """
 source "$ZDOTDIR/hooks/manager.zsh"
 """
 
-[plugins.fast-syntax-highlighting]
-github = "zdharma/fast-syntax-highlighting"
-apply = ["defer"]
-
 [plugins.zeno]
 github = "yuki-yano/zeno.zsh"
 apply = ["defer"]
 [plugins.zeno.hooks]
 pre = "zsh-defer source $ZDOTDIR/hooks/zeno-pre.zsh"
 post = "zsh-defer source $ZDOTDIR/hooks/zeno-post.zsh"
+
+[plugins.compinit]
+inline = """
+autoload -Uz compinit
+zsh-defer -a -t0.01 compinit -d "$XDG_STATE_HOME/zsh/zcompdump"
+"""
+# see: https://github.com/Aloxaf/fzf-tab?tab=readme-ov-file#install
+# loaded after compinit
+# before plugins such as autosuggestion, fast-syntax-highlighting
+[plugins.fzf-tab]
+github = "Aloxaf/fzf-tab"
+apply = ["defer"]
+
+[plugins.fast-syntax-highlighting]
+github = "zdharma/fast-syntax-highlighting"
+apply = ["defer"]
+
+[plugins.zsh-autosuggestions]
+github = "zsh-users/zsh-autosuggestions"
+apply = ["defer"]
+
+[plugins.zsh-completions]
+github = "zsh-users/zsh-completions"
+dir = "src"
+apply = ["defer", "fpath"]
 
 [plugins.async]
 inline = """
