@@ -1,6 +1,7 @@
 alias rm='rm -i'
 alias ll='ls -lh'
 alias la='ls -a'
+alias wget="wget --hsts-file=$XDG_DATA_HOME/wget-hsts"
 
 if command -v nvim >/dev/null 2>&1; then
   alias vim='nvim'
@@ -31,6 +32,7 @@ if command -v eza >/dev/null 2>&1; then
   alias la='eza --icons --group-directories-first --all'
   alias tree='eza --icons --group-directories-first --tree --git-ignore'
 fi
+
 
 ### mise ###
 eval "$(mise activate zsh)"
