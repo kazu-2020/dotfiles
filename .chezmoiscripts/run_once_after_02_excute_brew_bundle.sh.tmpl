@@ -10,6 +10,9 @@ brew bundle --verbose --file=/dev/stdin <<EOF
 {{ range .brew.packages.common -}}
 brew {{ . | quote }}
 {{ end -}}
+{{ range .brew.packages.mac -}}
+brew {{ . | quote }}
+{{ end -}}
 {{ range .brew.packages.cask.common -}}
 cask {{ . | quote }}
 {{ end -}}
