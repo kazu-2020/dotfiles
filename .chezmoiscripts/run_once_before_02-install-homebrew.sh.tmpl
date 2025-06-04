@@ -1,4 +1,5 @@
 #! /bin/sh
+echo "brew path: {{ .brew.path }}"
 
 if command -v brew &> /dev/null
 then
@@ -31,7 +32,6 @@ fi
 echo "Starting Homebrew installation..."
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-echo "brew path: {{ .brew.path }}"
 eval "$({{ .brew.path  }} shellenv)"
 
 echo "Homebrew installation completed. 🎉"
