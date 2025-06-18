@@ -40,6 +40,12 @@ export AWS_CONFIG_FILE="$XDG_CONFIG_HOME/aws/config"
 export AWS_VAULT_PASS_PREFIX="aws-vault"
 export AWS_VAULT_BACKEND=pass
 
+{{ if eq .chezmoi.os "linux" -}}
 ### Docker ###
-# NOTE: docker desktop には反映されない
+# NOTE: docker desktop は $HOME 直下にしか作られない
 export DOCKER_CONFIG="$XDG_CONFIG_HOME/docker"
+{{- end }}
+
+{{ if eq .chezmoi.os "darwin" -}}
+export SSH_AUTH_SOCK=~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
+{{- end }}
