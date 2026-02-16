@@ -28,18 +28,13 @@ progress = true
    "1password-cli",
    "font-plemol-jp",
    "visual-studio-code",
-   "iterm2"
   ]
   {{ if promptBool "Do you want to install external casks" -}}
   cask.external = [
     "alt-tab",
-    "arc",
     "cleanshot",
     "deepl",
-    "notion",
     "raycast",
-    "session-manager-plugin",
-    "aerospace"
   ]
   {{ else -}}
   cask.external = []

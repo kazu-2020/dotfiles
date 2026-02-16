@@ -1,7 +1,16 @@
 unsetopt GLOBAL_RCS
 
+export EDITOR="nvim"
+
+### Claude ###
+export CLAUDE_CONFIG_DIR="$XDG_CONFIG_HOME/claude"
+
 ### Ruby ###
 export IRMRC="$XDG_CONFIG_HOME/irb/irbrc"
+
+export BUNDLE_USER_HOME="$XDG_CONFIG_HOME/bundle"
+export BUNDLE_USER_CACHE="$XDG_CACHE_HOME/bundle"
+export BUNDLE_USER_PLUGIN="$XDG_DATA_HOME/bundle/plugin"
 
 ### Rust ###
 export CARGO_HOME="$XDG_DATA_HOME/cargo"
@@ -11,13 +20,12 @@ export RUSTUP_HOME="$XDG_DATA_HOME/rustup"
 export GOPATH="$XDG_DATA_HOME/go"
 export GOBIN="$GOPATH/bin"
 
+### JS ###
+export NPM_CONFIG_USERCONFIG="$XDG_CONFIG_HOME/npm"
+
 ### Deno ###
 export DENO_INSTALL="$XDG_DATA_HOME/deno"
 export DENO_INSTALL_ROOT="$DENO_INSTALL"
-
-export BUNDLE_USER_HOME="$XDG_CONFIG_HOME/bundle"
-export BUNDLE_USER_CACHE="$XDG_CACHE_HOME/bundle"
-export BUNDLE_USER_PLUGIN="$XDG_DATA_HOME/bundle/plugin"
 
 ### aqua ###
 export AQUA_ROOT_DIR="$XDG_DATA_HOME/aqua"
