@@ -1,0 +1,31 @@
+// テーマ: Ghostty と統一
+theme "tokyo-night-dark"
+
+// macOS クリップボード統合
+copy_command "pbcopy"
+copy_on_select true
+
+// スクロールバッファ
+scrollback_lines 10000
+
+// マウス対応
+mouse_mode true
+
+// UI 設定: Zellij のデフォルトペインフレームを有効化
+pane_frames true
+
+// セッション永続化: detach 時にセッションを保持
+on_force_close "detach"
+
+// レイアウトディレクトリ
+layout_dir "/Users/matazou/.config/zellij/layouts"
+
+// ペイン移動: Hyper+h/j/k/l (Hyper = Ctrl+Alt+Shift+Super via Raycast Left Option)
+keybinds {
+    shared_except "locked" {
+        bind "Ctrl Alt Shift Super h" { MoveFocusOrTab "Left"; }
+        bind "Ctrl Alt Shift Super l" { MoveFocusOrTab "Right"; }
+        bind "Ctrl Alt Shift Super j" { MoveFocus "Down"; }
+        bind "Ctrl Alt Shift Super k" { MoveFocus "Up"; }
+    }
+}
