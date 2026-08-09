@@ -1,0 +1,68 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## リポジトリの性質
+
+[chezmoi](https://www.chezmoi.io/) で管理する dotfiles のソースディレクトリ。ビルド・テスト・リントは存在しない。対象 OS は macOS (Intel / Apple Silicon) と Ubuntu で、OS 差分は Go テンプレートで吸収する。
+
+このディレクトリ自体が chezmoi のソースディレクトリ (`~/.local/share/chezmoi`) なので、ここでファイルを編集しても `chezmoi apply` するまでホームディレクトリには反映されない。
+
+## よく使うコマンド
+
+```sh
+chezmoi execute-template < dot_config/zsh/dot_zshenv.tmpl   # テンプレート展開結果の確認
+chezmoi data              # テンプレートで参照できる変数の一覧
+```
+
+`.chezmoiscripts/` のスクリプトは `run_once_` なので、内容を変更しない限り再実行されない。強制的に再実行させるには `chezmoi state delete-bucket --bucket=scriptState` を使う。
+
+## ファイル命名規則 (chezmoi の属性プレフィックス)
+
+ファイル名がそのまま配置先とパーミッションを決める。リネーム時は要注意。
+
+- `dot_foo` → `~/.foo`、`dot_config/` → `~/.config/`
+- `executable_foo` → 実行ビットを立てて配置 (例: `dot_config/borders/executable_bordersrc`)
+- `*.tmpl` → Go テンプレートとして展開してから配置 (拡張子は落ちる)
+- `.chezmoiignore` / `.chezmoi.toml.tmpl` / `.chezmoiscripts/` / `.chezmoidata/` は chezmoi 自身の設定で、ホームには配置されない
+
+## テンプレートのデータソース
+
+`.chezmoi.toml.tmpl` が生成する `~/.config/chezmoi/chezmoi.toml` がテンプレート変数の実体。ここが 2 つの役割を持つ:
+
+1. `[data.brew.packages]` — インストールするパッケージ一覧 (`common` / `mac` / `cask.common` / `cask.external`)。`cask.external` は `chezmoi init` 時の `promptBool` で入れるか選ばせる。パッケージを追加する場合はここを編集する。
+2. `[data.brew] path` — OS/アーキテクチャごとの brew パス (`/opt/homebrew`, `/usr/local`, `/home/linuxbrew/.linuxbrew`)。`sync.zsh.tmpl` の `eval "$({{ .brew.path }} shellenv)"` などがこれを参照する。
+
+**`.chezmoi.toml.tmpl` を変更しても既存環境の `chezmoi.toml` は自動更新されない。** 反映には `chezmoi init` の再実行が必要。
+
+## zsh 設定の構造
+
+XDG 準拠のため `ZDOTDIR` を `~/.config/zsh` に寄せている。読み込み経路:
+
+```
+~/.zshenv (dot_zshenv.tmpl)      XDG 変数と ZDOTDIR を定義し $ZDOTDIR/.zshenv を source
+  └─ ~/.config/zsh/.zshenv        各ツールの XDG 準拠な環境変数 (GOPATH, CARGO_HOME, ...)
+       └─ ~/.config/zsh/.zshrc    sync.zsh を source → sheldon で残りを非同期ロード
+```
+
+- `sync.zsh.tmpl` — 起動時に同期実行が必要なもの (PATH 構築、brew shellenv、history、setopt)
+- `sheldon/plugins.toml` — プラグイン管理。`zsh-defer` を使った `defer` テンプレートで大半を遅延ロードする
+- `hooks/async.zsh.tmpl` — エイリアスと mise 有効化。sheldon の `[plugins.async]` から遅延 source される
+- `hooks/zeno-pre.zsh` / `zeno-post.zsh` — zeno の環境変数とキーバインド。プラグインの `hooks.pre` / `hooks.post` から呼ばれる
+
+`sheldon/plugins.toml` の `[templates] defer` 内の `{{ }}` は sheldon (Tera) のテンプレート構文であり、chezmoi のものではない。このファイルは `.tmpl` ではないので chezmoi は展開しないが、`.tmpl` 化する場合は `{{` のエスケープが必要になる。
+
+`hooks/manager.zsh.tmpl` は現状どこからも読み込まれていない (内容は `async.zsh.tmpl` と重複)。
+
+新しいシェル設定を追加する際は、遅延させてよいものは `hooks/async.zsh.tmpl` に、PATH や `setopt` など即時に必要なものは `sync.zsh.tmpl` に置く。
+
+## 1Password 連携 (macOS)
+
+- SSH agent: `dot_config/zsh/dot_zshenv.tmpl` で `SSH_AUTH_SOCK` を 1Password の agent.sock に向けている (darwin のみ)
+- コミット署名: `dot_config/git/config.tmpl` で `gpg.format = ssh` + `commit.gpgsign = true`。署名プログラムは `op` コマンドが存在する macOS でのみ `op-ssh-sign` を設定する条件付きブロックになっている (Linux では署名プログラム未設定)
+
+## 変更時の注意
+
+- テンプレート内の `{{ if eq .chezmoi.os "darwin" }}` 系の分岐を追加/変更したら、`chezmoi execute-template` で両 OS 相当の出力を確認する
+- 秘密情報は直接書かず 1Password (`onepasswordRead` 等) を経由させる方針
+- コミットメッセージは日本語の短い要約が慣例
