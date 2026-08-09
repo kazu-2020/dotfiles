@@ -1,0 +1,9 @@
+# machine-local な git 設定の置き場 (chezmoi 管理外)
+#
+# このファイルが存在すると `git config --global` の書き込み先がここになる。
+# CodeRabbit の machineId のようにツールが自動追記する設定を受け止めて、
+# chezmoi 管理下の ~/.config/git/config が汚れるのを防ぐのが目的。
+#
+# chezmoi は create_ 属性で「無ければ作る」だけを行い、中身は一切管理しない。
+# git は ~/.config/git/config → ~/.gitconfig の順に読み、こちらが優先される。
+# そのため共有したい設定は必ず dot_config/git/config.tmpl 側に書くこと。
