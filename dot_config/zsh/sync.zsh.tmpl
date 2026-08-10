@@ -41,7 +41,44 @@ setopt hist_ignore_space
 setopt hist_reduce_blanks
 setopt hist_save_no_dups
 setopt hist_verify
-setopt inc_append_history_time
+
+# 失敗したコマンドを履歴ファイルに残さない。
+# zshaddhistory の時点では終了ステータスが分からないため、いったん保存を保留し
+# (return 1)、precmd で成功していた場合だけ内部履歴へ入れて fc -AI で即時追記する。
+# inc_append_history(_time) は fc -AI との二重書き込みで重複が出るため使わない。
+#
+# 制約:
+# - extended_history のタイムスタンプは終了時刻になり、経過時間は常に 0 になる
+# - 失敗したコマンドを ↑ で呼び出せるのは直後の 1 回だけ (打ち直し用)
+# - この 2 つの hook が唯一の zshaddhistory 消費者である前提。行を破棄する
+#   フィルタ hook を追加する場合は __defer_hist_write 側にも同じ条件を足すこと
+autoload -Uz add-zsh-hook
+
+__defer_hist_write() {
+    # 先頭スペースの行は hist_ignore_space に任せる
+    [[ -o hist_ignore_space && $1 == \ * ]] && return 0
+    typeset -g __deferred_hist_line="${1%%$'\n'}"
+    return 1
+}
+
+__save_hist_if_ok() {
+    local last_status=$?
+    # シグナルで中断されたコマンド (^C や ^Z など: 128 超) は失敗扱いにしない
+    if [[ -n $__deferred_hist_line ]] && (( last_status == 0 || last_status > 128 )); then
+        local line="$__deferred_hist_line"
+        # print -S は hist_reduce_blanks を通らないため単一行のみ自前で正規化する
+        # (多行は ${(z)} が改行を ';' に書き換えてしまうので対象外)
+        if [[ -o hist_reduce_blanks && $line != *$'\n'* ]]; then
+            line="${(j: :)${(z)line}}"
+        fi
+        print -Sr -- "$line"
+        fc -AI
+    fi
+    __deferred_hist_line=
+}
+
+add-zsh-hook zshaddhistory __defer_hist_write
+add-zsh-hook precmd __save_hist_if_ok
 
 # cd options
 setopt auto_cd
