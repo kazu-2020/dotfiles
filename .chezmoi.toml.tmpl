@@ -9,34 +9,27 @@ progress = true
 {{- $installExternal := promptBoolOnce . "brew.packages.cask.installExternal" "Do you want to install external casks" }}
 [data.brew.packages.cask]
   installExternal = {{ $installExternal }}
-  {{ if $installExternal -}}
+{{- if $installExternal }}
   external = [
     "alt-tab",
     "cleanshot",
     "deepl",
     "raycast",
   ]
-  {{ else -}}
+{{- else }}
   external = []
-  {{ end -}}
-
-{{- if eq .chezmoi.os "linux" }}
-[data.brew]
-  path = "/home/linuxbrew/.linuxbrew/bin/brew"
 {{- end }}
-
-{{- if (and (eq .chezmoi.os "darwin") (eq .chezmoi.arch "arm64")) }}
-# Apple シリコン
-[data.brew]
-  path = "/opt/homebrew/bin/brew"
+{{/* linux は linuxbrew、macOS は Apple シリコン (arm64) と Intel (amd64) で brew のパスが異なる */ -}}
+{{- $brewPath := "" -}}
+{{- if eq .chezmoi.os "linux" -}}
+{{-   $brewPath = "/home/linuxbrew/.linuxbrew/bin/brew" -}}
+{{- else if eq .chezmoi.arch "arm64" -}}
+{{-   $brewPath = "/opt/homebrew/bin/brew" -}}
+{{- else -}}
+{{-   $brewPath = "/usr/local/bin/brew" -}}
 {{- end }}
-
-{{- if (and (eq .chezmoi.os "darwin") (eq .chezmoi.arch "amd64")) }}
-# Intel Mac
 [data.brew]
-  path = "/usr/local/bin/brew"
-{{- end }}
-  
+  path = {{ $brewPath | quote }}
 
 [edit]
 {{ if lookPath "nvim" }}
