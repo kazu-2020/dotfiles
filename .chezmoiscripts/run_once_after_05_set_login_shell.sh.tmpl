@@ -4,13 +4,23 @@ set -eu
 # ログインシェルを zsh にする。
 # chezmoi apply は非対話で流れるため、chsh のパスワード入力を避けて sudo 経由で叩く。
 # ここで失敗しても apply 全体は止めず、手動手順を案内するだけにする。
+# set -eu 下では sudo の失敗がそのまま apply の中断になるので、
+# sudo を使う箇所はすべて give_up で受けること。
+give_up() {
+  echo "$1 😱" >&2
+  # ユーザーにそのままコピーさせるコマンド文字列なので展開させない
+  # shellcheck disable=SC2016
+  echo 'ログインシェルは手動で変更すること: chsh -s "$(command -v zsh)"' >&2
+  exit 0
+}
 
 {{ if eq .chezmoi.os "linux" -}}
 if ! command -v zsh >/dev/null 2>&1; then
   echo "Installing zsh..."
   # 新規環境ではパッケージリストが空なので update してから install する
-  sudo apt-get update
-  sudo apt-get install -y zsh
+  if ! { sudo apt-get update && sudo apt-get install -y zsh; }; then
+    give_up "zsh のインストールに失敗した (sudo が使えない?)"
+  fi
 fi
 {{ end -}}
 
@@ -40,12 +50,14 @@ esac
 # chsh は /etc/shells に載っているシェルしか受け付けない
 if ! grep -qxF "$zsh_path" /etc/shells 2>/dev/null; then
   echo "Adding $zsh_path to /etc/shells"
-  echo "$zsh_path" | sudo tee -a /etc/shells >/dev/null
+  # パイプの終了ステータスは tee のもの。sudo がこけた場合も tee は走らないのでここで拾える
+  if ! echo "$zsh_path" | sudo tee -a /etc/shells >/dev/null; then
+    give_up "/etc/shells への追記に失敗した (sudo が使えない?)"
+  fi
 fi
 
 echo "Changing login shell: ${current_shell:-unknown} -> $zsh_path"
-if sudo chsh -s "$zsh_path" "$user"; then
-  echo "Login shell changed to zsh. 次のログインから反映される 🎉"
-else
-  echo "ログインシェルの変更に失敗した 😱 手動で 'chsh -s $zsh_path' を実行すること" >&2
+if ! sudo chsh -s "$zsh_path" "$user"; then
+  give_up "ログインシェルの変更に失敗した (sudo が使えない?)"
 fi
+echo "Login shell changed to zsh. 次のログインから反映される 🎉"
