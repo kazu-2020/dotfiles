@@ -6,7 +6,9 @@
 
 ## Requirements
 
-- zsh: ログインシェルに設定しておくこと
+- zsh: `chezmoi apply` 時に自動でインストール (Ubuntu のみ) / ログインシェルへ設定する。
+  `sudo` が使えない環境では変更をスキップして案内だけ出すので、その場合は
+  `chsh -s "$(command -v zsh)"` を手動で実行する。反映は次回ログインから。
 
 ## Installation
 
