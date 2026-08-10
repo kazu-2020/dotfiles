@@ -2,40 +2,18 @@
 
 progress = true
 
-[data.brew.packages]
-  common = [
-    "chezmoi",
-    "sheldon",
-    "deno",
-    "mise",
-    "bat",
-    "fd",
-    "fzf",
-    "git",
-    "ghq",
-    "starship",
-    "neovim",
-    "jq",
-    "eza",
-    "ripgrep"
-  ]
-  mac = [
-    "borders"
-  ]
-  cask.common = [
-   "1password",
-   "1password-cli",
-   "font-plemol-jp",
-  ]
+# NOTE: パッケージ一覧の本体は .chezmoidata/packages.yaml にある。
+# ここには promptBool の結果に依存して .chezmoidata に置けないものだけを残す。
+[data.brew.packages.cask]
   {{ if promptBool "Do you want to install external casks" -}}
-  cask.external = [
+  external = [
     "alt-tab",
     "cleanshot",
     "deepl",
     "raycast",
   ]
   {{ else -}}
-  cask.external = []
+  external = []
   {{ end -}}
 
 {{- if eq .chezmoi.os "linux" }}
