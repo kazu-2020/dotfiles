@@ -1,12 +1,25 @@
 #!/bin/sh
 
+set -e
+
 if ! command -v brew >/dev/null 2>&1; then
     echo "brew command not found 😱"
     exit 1
 fi
 
 {{ if eq .chezmoi.os "darwin" -}}
+# Homebrew 6.0 以降、公式以外の tap の formula はロード前に信頼登録が必要。
+# trust.json の場所が $XDG_CONFIG_HOME に依存する (未設定だと ~/.homebrew/) ため、
+# どこから実行しても ~/.config/homebrew/trust.json に寄るよう明示する。
+XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+export XDG_CONFIG_HOME
+{{ range .brew.taps.mac -}}
+brew trust --tap {{ . | quote }}
+{{ end }}
 brew bundle --verbose --file=/dev/stdin <<EOF
+{{ range .brew.taps.mac -}}
+tap {{ . | quote }}
+{{ end -}}
 {{ range .brew.packages.common -}}
 brew {{ . | quote }}
 {{ end -}}
