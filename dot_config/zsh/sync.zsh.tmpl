@@ -8,8 +8,6 @@ export LANG="en_US.UTF-8"
 typeset -gU PATH path
 typeset -gU FPATH fpath
 
-setopt hist_ignore_dups
-
 path=(
     '/usr/local/bin'(N-/)
     '/usr/local/go/bin'(N-/)
@@ -37,10 +35,9 @@ export HISTSIZE=10000
 export SAVEHIST=100000
 
 setopt extended_history
-setopt hist_find_no_dups      
-setopt hist_ignore_all_dups    
-setopt hist_ignore_dups         
-setopt hist_ignore_space         
+setopt hist_find_no_dups
+setopt hist_ignore_all_dups
+setopt hist_ignore_space
 setopt hist_reduce_blanks
 setopt hist_save_no_dups
 setopt hist_verify

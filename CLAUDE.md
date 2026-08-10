@@ -24,7 +24,8 @@ chezmoi data              # テンプレートで参照できる変数の一覧
 - `dot_foo` → `~/.foo`、`dot_config/` → `~/.config/`
 - `executable_foo` → 実行ビットを立てて配置 (例: `dot_config/borders/executable_bordersrc`)
 - `*.tmpl` → Go テンプレートとして展開してから配置 (拡張子は落ちる)
-- `.chezmoiignore` / `.chezmoi.toml.tmpl` / `.chezmoiscripts/` / `.chezmoidata/` は chezmoi 自身の設定で、ホームには配置されない
+- `.chezmoiignore` / `.chezmoiremove` / `.chezmoi.toml.tmpl` / `.chezmoiscripts/` / `.chezmoidata/` は chezmoi 自身の設定で、ホームには配置されない
+- `.chezmoiremove` に書いたパスは `chezmoi apply` で**削除される**。ソースから消しただけでは配置済みファイルは残るため、その後始末に使う (全環境に行き渡ったらエントリごと消してよい)
 
 ## テンプレートのデータソース
 
@@ -59,8 +60,6 @@ XDG 準拠のため `ZDOTDIR` を `~/.config/zsh` に寄せている。読み込
 **TAB (`^i`) の補完 UI は fzf-tab に寄せる方針**。zeno は `config.yml` の `snippets:` を使うスニペット展開と履歴選択・ghq cd に限定して使い、`zeno-completion` は bind しない。両方を bind すると `zsh-defer` の FIFO 実行で後から読まれた方が勝つため、読み込み順に依存した壊れ方をする。
 
 `sheldon/plugins.toml` の `[templates] defer` 内の `{{ }}` は sheldon (Tera) のテンプレート構文であり、chezmoi のものではない。このファイルは `.tmpl` ではないので chezmoi は展開しないが、`.tmpl` 化する場合は `{{` のエスケープが必要になる。
-
-`hooks/manager.zsh.tmpl` は現状どこからも読み込まれていない (内容は `async.zsh.tmpl` と重複)。
 
 新しいシェル設定を追加する際は、遅延させてよいものは `hooks/async.zsh.tmpl` に、PATH や `setopt` など即時に必要なものは `sync.zsh.tmpl` に置く。
 
