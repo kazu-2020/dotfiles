@@ -31,7 +31,9 @@ chezmoi data              # テンプレートで参照できる変数の一覧
 
 テンプレート変数の実体は 2 箇所にあり、chezmoi が両者を再帰的にマージする。
 
-1. `.chezmoidata/packages.yaml` — インストールするパッケージ一覧 (`brew.packages` の `common` / `mac` / `cask.common`)。**パッケージを追加する場合はここを編集する。**
+1. `.chezmoidata/` 以下のデータファイル (chezmoi が `.yaml` / `.yml` / `.json` / `.toml` をすべて読む)
+   - `packages.yaml` — インストールするパッケージ一覧 (`brew.packages` の `common` / `mac` / `cask.common`)。**パッケージを追加する場合はここを編集する。**
+   - `onepassword.yaml` — 1Password の SSH agent ソケットのパス。zshenv とチェックスクリプトの 2 箇所から参照されるので、値をここに寄せている
 2. `.chezmoi.toml.tmpl` が生成する `~/.config/chezmoi/chezmoi.toml` — prompt や OS 判定に依存して `.chezmoidata` に置けないもの:
    - `[data.brew.packages.cask] external` / `installExternal` — `chezmoi init` 時の `promptBoolOnce` で入れるか選ばせる。回答は `installExternal` として書き出され、次回以降の `chezmoi init` はそれを引き継ぐので再質問されない (質問し直したい場合は `chezmoi.toml` からこのキーを消す)
    - `[data.brew] path` — OS/アーキテクチャごとの brew パス (`/opt/homebrew`, `/usr/local`, `/home/linuxbrew/.linuxbrew`)。`sync.zsh.tmpl` の `eval "$({{ .brew.path }} shellenv)"` などがこれを参照する
@@ -76,12 +78,14 @@ Go / Node / Ruby / uv などのランタイムは mise に一本化しており�
 ## 1Password 連携 (macOS)
 
 - インストール: `.chezmoidata/packages.yaml` の cask (`1password` / `1password-cli`) で入る
-- SSH agent: `dot_config/zsh/dot_zshenv.tmpl` で `SSH_AUTH_SOCK` を 1Password の agent.sock に向けている (darwin のみ)
+- SSH agent: `dot_config/zsh/dot_zshenv.tmpl` で `SSH_AUTH_SOCK` を 1Password の agent.sock に向けている (darwin のみ)。ソケットのパスは `.chezmoidata/onepassword.yaml` が唯一の情報源で、zshenv と後述のチェックスクリプトの両方がここを参照する
 - コミット署名: `dot_config/git/config.tmpl` で `gpg.format = ssh` + `commit.gpgsign = true`。署名プログラムは `op` コマンドが存在する macOS でのみ `op-ssh-sign` を設定する条件付きブロックになっている (Linux では署名プログラム未設定)
 
 **SSH agent の有効化そのものは自動化していない。** トグルの実体は 1Password の `settings.json` (`sshAgent.enabled`) だが、初回サインインを済ませるまでこのファイルが存在せず (サインインは GUI 必須)、アプリ起動中の書き換えはメモリ上の状態に上書きされ、かつ非公式フォーマットなのでキー名がアップデートで黙って変わりうる。
 
-代わりに `run_after_06_check_1password_ssh_agent.sh.tmpl` が apply のたびに agent.sock の有無を見て、無効なら有効化手順を stderr に出す。有効なら無音、どのケースでも `exit 0` で apply は止めない。`run_once_` にしないのは、初回 apply の時点ではまだサインインが済んでおらず、一度きりの警告だと有効化し忘れたまま気づけなくなるため。ソケットのパスは `dot_zshenv.tmpl` の `SSH_AUTH_SOCK` と同じ値を書いているので、片方を変えたらもう片方も直すこと。
+代わりに `run_after_06_check_1password_ssh_agent.sh.tmpl` が apply のたびに agent.sock の有無を見て、無効なら有効化手順を stderr に出す。有効なら無音、どのケースでも `exit 0` で apply は止めない。`run_once_` にしないのは、初回 apply の時点ではまだサインインが済んでおらず、一度きりの警告だと有効化し忘れたまま気づけなくなるため。
+
+このスクリプトだけ **darwin 限定の方法が他と違う**。他のスクリプトはテンプレートの `{{ if eq .chezmoi.os "darwin" }}` で本文を空にしているが、これは毎回走る `run_after_` なので、それだと Linux で apply のたびに空のプロセスが起きる。代わりに `.chezmoiignore` でスクリプトごと除外している。**`.chezmoiignore` に書くパターンはソース名ではなく展開後のターゲット名** (`.chezmoiscripts/06_check_1password_ssh_agent.sh`) で、ソース名を書いても一致せず静かに無視される。効いているかは `chezmoi managed --include=scripts` で確認できる。
 
 ## 変更時の注意
 
