@@ -1,0 +1,157 @@
+#!/usr/bin/env zsh
+# starship のプロンプト描画にかかる時間を計測する。
+#
+#   starship-bench [-n RUNS] [-w WARMUP] [DIR ...]
+#
+# DIR ごとに以下を出す:
+#   full      : 実際の ~/.config/starship.toml でのプロンプト描画時間
+#   baseline  : モジュールをほぼ無効にした設定での描画時間 (= プロセス起動のコスト)
+#   git       : starship が内部で叩くのと同じ git コマンド単体の時間
+#   timings   : starship timings によるモジュール別の内訳 (遅い順)
+#
+# full - baseline がモジュール群の実コスト。baseline が支配的ならプロセス起動が原因
+# なので設定をいじっても速くならない (プロンプトを非同期にするしかない)。
+#
+# 計測は対話シェルの precmd そのものではなく `starship prompt` 1 回分。
+# zsh 側のプラグイン読み込みは含まないので、シェル起動全体の時間とは別物。
+
+emulate -L zsh
+set -o err_return -o no_unset -o pipe_fail
+zmodload zsh/datetime
+
+typeset -g PROG="${0:t}"
+
+die() {
+    print -u2 -- "$PROG: $*"
+    exit 1
+}
+
+usage() {
+    print -- "usage: $PROG [-n RUNS] [-w WARMUP] [DIR ...]"
+    print -- "  -n RUNS    計測回数 (既定: 20)"
+    print -- "  -w WARMUP  計測に含めない空回し回数 (既定: 3)"
+    print -- "  DIR        計測するディレクトリ (既定: カレント)"
+}
+
+typeset -gi RUNS=20 WARMUP=3
+
+while getopts ':n:w:h' opt; do
+    case $opt in
+        n) RUNS=$OPTARG ;;
+        w) WARMUP=$OPTARG ;;
+        h)
+            usage
+            exit 0
+            ;;
+        *)
+            usage >&2
+            exit 2
+            ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+((RUNS > 0)) || die "-n は 1 以上"
+((WARMUP >= 0)) || die "-w は 0 以上"
+
+(( $+commands[starship] )) || die "starship が見つからない"
+
+typeset -a DIRS=("${@:-$PWD}")
+
+# モジュールを持たない比較用の設定。starship はプロセス起動だけでも数 ms かかるので、
+# 「設定を削れば速くなるのか」を判断するにはこの下限を知る必要がある
+typeset -g BASELINE_CONFIG
+BASELINE_CONFIG="$(mktemp -t starship-bench.XXXXXX)" || die "mktemp に失敗"
+print -r -- 'format = "$character"' > "$BASELINE_CONFIG"
+trap 'rm -f -- "$BASELINE_CONFIG"' EXIT INT TERM
+
+# starship が precmd から呼ばれるときと同じ形の引数。端末幅は tty に依存させない
+typeset -ga PROMPT_ARGS=(prompt --status=0 --cmd-duration=0 --terminal-width=120)
+
+# usec 単位のサンプルを $SAMPLES に詰める
+typeset -ga SAMPLES=()
+measure() {
+    local -i i us
+    local -F start
+    SAMPLES=()
+    for ((i = 1; i <= WARMUP + RUNS; i++)); do
+        start=$EPOCHREALTIME
+        "$@" > /dev/null 2>&1 || true
+        # 整数変数への代入で usec に切り捨てる (以降のソートを整数比較にするため)
+        ((us = (EPOCHREALTIME - start) * 1000000))
+        ((i > WARMUP)) && SAMPLES+=($us)
+    done
+}
+
+# ソート済み usec 配列から p パーセンタイル値を返す
+percentile() {
+    local -i p=$1
+    shift
+    local -i n=$# idx
+    ((idx = (p * n + 99) / 100))
+    ((idx < 1)) && idx=1
+    ((idx > n)) && idx=n
+    print -r -- "${@[idx]}"
+}
+
+# ラベル付きで p50 / p90 / max を 1 行に出す
+report() {
+    local label=$1
+    shift
+    measure "$@"
+    local -a sorted=(${(on)SAMPLES})
+    local -i p50 p90 max
+    p50=$(percentile 50 "${sorted[@]}")
+    p90=$(percentile 90 "${sorted[@]}")
+    max=${sorted[-1]}
+    printf '  %-10s p50 %7.1f ms   p90 %7.1f ms   max %7.1f ms\n' \
+        "$label" $((p50 / 1000.0)) $((p90 / 1000.0)) $((max / 1000.0))
+}
+
+print -r -- "$(starship --version | head -1)"
+print -r -- "config:   ${STARSHIP_CONFIG:-$HOME/.config/starship.toml}"
+print -r -- "runs:     $RUNS (warmup $WARMUP)"
+
+for dir in "${DIRS[@]}"; do
+    print
+    if [[ ! -d $dir ]]; then
+        print -u2 -- "$PROG: skip (ディレクトリではない): $dir"
+        continue
+    fi
+
+    cd -q -- "${dir:A}" || continue
+    print -r -- "=== $PWD"
+
+    # 追跡ファイル数は git_status のコストにほぼ比例するので添えておく
+    if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+        print -r -- "  git repo: $(git ls-files 2> /dev/null | wc -l | tr -d ' ') tracked files"
+    else
+        print -r -- "  git repo: no"
+    fi
+
+    report full starship "${PROMPT_ARGS[@]}"
+    STARSHIP_CONFIG="$BASELINE_CONFIG" report baseline starship "${PROMPT_ARGS[@]}"
+    if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+        report git git status --porcelain=2 --branch --untracked-files=normal
+    fi
+
+    # starship 自身のモジュール別計測。1ms 未満のモジュールは starship 側が省く
+    print -r -- "  timings (遅い順):"
+    # 出力サンプルの列 (エスケープシーケンス入り) は落として名前と時間だけ残す
+    starship timings 2> /dev/null \
+        | grep -E '^ *[a-z_]+ +- ' \
+        | head -12 \
+        | sed -e 's/ *- *".*$//' -e 's/^/  /' \
+        || true
+done
+
+print
+cat <<'HINT'
+読み方:
+  full ≫ baseline        遅いのはモジュール。timings の上位を disabled にするか、
+                         [git_status] の command_timeout / [] の scan_timeout を詰める
+  full ≈ baseline (遅い) プロセス起動そのものが重い。設定を削っても改善しないので、
+                         プロンプトを軽い実装に替えるか非同期描画にする
+巨大リポジトリでは git 行がそのまま git_status の下限になる。git 単体で遅い場合は
+starship ではなく git 側 (fsmonitor / untracked cache) の問題。
+HINT

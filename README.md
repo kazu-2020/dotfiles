@@ -58,6 +58,7 @@ chsh -s "$(command -v zsh)"
 | `dot_config/zsh/` | zsh 設定。`ZDOTDIR` を `~/.config/zsh` に寄せ、sheldon で非同期ロード |
 | `dot_config/mise/config.toml` | 言語ランタイム (Go / Node / Ruby / uv) のバージョン。唯一の情報源 |
 | `dot_config/git/`, `nvim/`, `starship.toml`, ... | 各ツールの設定 |
+| `dot_local/bin/` | `~/.local/bin` に置く自作コマンド (`starship-bench` など) |
 
 ファイル名のプレフィックスが配置先とパーミッションを決める chezmoi の規約に従う
 (`dot_foo` → `~/.foo`、`executable_` → 実行ビット、`*.tmpl` → テンプレート展開)。
@@ -81,6 +82,21 @@ chezmoi state delete-bucket --bucket=scriptState
 言語ランタイムのバージョンを変えるときは `mise use -g` ではなく
 `dot_config/mise/config.toml` を編集して `chezmoi apply` する
 (`mise use -g` の書き込み先は chezmoi 管理下のファイルなので、次の apply で巻き戻る)。
+
+## プロンプトの体感速度を測る
+
+starship はコマンドを打つたびにプロセスを起動してモジュールを評価するので、
+大きな git リポジトリでは 1 コマンドごとの待ちが目に見えて増えることがある。
+実測してから設定を削るために `starship-bench` を用意している。
+
+```sh
+starship-bench                        # カレントディレクトリで計測
+starship-bench -n 50 ~/work/big-repo  # 回数とディレクトリを指定
+```
+
+`full` (実設定) と `baseline` (モジュールなし = プロセス起動のみ) の差がモジュールの
+コストで、`timings` がその内訳。差が小さいのに遅い場合は設定を削っても改善しないため、
+プロンプト自体を替えるか非同期描画にする判断材料になる。
 
 ## CI
 
