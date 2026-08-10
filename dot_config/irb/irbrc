@@ -1,1 +1,4 @@
-IRB.conf[:HISTORY_FILE] = File.join(ENV['XDG_STATE_HOME'], '.irb_history')
+IRB.conf[:HISTORY_FILE] = File.join(
+  ENV.fetch('XDG_STATE_HOME', File.expand_path('~/.local/state')),
+  '.irb_history'
+)
