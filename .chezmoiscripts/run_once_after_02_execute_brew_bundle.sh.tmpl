@@ -1,7 +1,12 @@
 #!/bin/sh
 set -eu
 
-set -e
+# before スクリプトの eval shellenv は別プロセスなので、この after スクリプトに PATH が
+# 引き継がれない。Apple Silicon の /opt/homebrew/bin はデフォルト PATH に無いため、
+# 初回ブートストラップでは brew を見つけられない。ここでも shellenv を評価しておく。
+if ! command -v brew >/dev/null 2>&1 && [ -x "{{ .brew.path }}" ]; then
+    eval "$({{ .brew.path }} shellenv)"
+fi
 
 if ! command -v brew >/dev/null 2>&1; then
     echo "brew command not found 😱"
