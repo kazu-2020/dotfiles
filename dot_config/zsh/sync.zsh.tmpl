@@ -31,7 +31,8 @@ eval "$({{ .brew.path  }} shellenv)"
 
 ### history ###
 export HISTFILE="$XDG_STATE_HOME/zsh_history"
-export HISTSIZE=10000
+# HISTSIZE < SAVEHIST だと古い履歴がメモリに載らず Ctrl-R で引けないので揃える
+export HISTSIZE=100000
 export SAVEHIST=100000
 
 setopt extended_history
