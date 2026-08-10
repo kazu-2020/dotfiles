@@ -61,6 +61,7 @@ chsh -s "$(command -v zsh)"
 | パス | 内容 |
 | --- | --- |
 | `.chezmoidata/packages.yaml` | brew で入れるパッケージ一覧。**パッケージの追加はここ** |
+| `.chezmoiversion` | 要求する chezmoi の最低バージョン |
 | `.chezmoi.toml.tmpl` | prompt の結果や OS 判定に依存する設定 (brew のパスなど) |
 | `.chezmoiscripts/` | apply 時に走るスクリプト |
 | `dot_config/zsh/` | zsh 設定。`ZDOTDIR` を `~/.config/zsh` に寄せ、sheldon で非同期ロード |
