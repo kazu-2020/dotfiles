@@ -1,3 +1,5 @@
+# sync.zsh は sheldon より先に読むこと。$XDG_STATE_HOME/zsh を作るのがここだけなので、
+# 順序を入れ替えると compinit が dump を黙って作らなくなる (毎回フルスキャンに戻る)。
 source $ZDOTDIR/sync.zsh
 
 eval "$(sheldon source)"

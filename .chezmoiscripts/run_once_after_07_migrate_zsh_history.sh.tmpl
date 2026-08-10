@@ -20,11 +20,12 @@ if [ -e "$new" ]; then
   exit 0
 fi
 
-mkdir -p "$(dirname "$new")"
+# irb の移行と違いディレクトリは chmod しない。ここは zcompdump と共用で、
+# 新規環境では sync.zsh の mkdir が作る (履歴の保護は下の chmod 600 が担う)。
+mkdir -p "$state/zsh"
 mv "$old" "$new"
 chmod 600 "$new"
 echo "moved: $old -> $new"
 
-# 起動中の zsh は旧パスの HISTFILE を掴んだままなので、以降に打ったコマンドは
-# $old へ書き戻される (このスクリプトは run_once_ なので拾い直されない)。
+# 起動中の zsh は旧パスの HISTFILE を掴んだままで、以降のコマンドは $old へ書き戻される
 echo "note: 起動中の zsh は $old へ書き続ける。新しいシェルを開き直すこと" >&2
