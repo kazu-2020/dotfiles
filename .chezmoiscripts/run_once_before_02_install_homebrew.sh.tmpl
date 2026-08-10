@@ -17,13 +17,15 @@ REQUIRED_PACKAGES="build-essential procps curl file git"
 MISSING_PACKAGES=""
 
 for pkg in $REQUIRED_PACKAGES; do
-    if ! dpkg -l | grep -qw $pkg; then
+    if ! dpkg -l | grep -qw "$pkg"; then
         MISSING_PACKAGES="$MISSING_PACKAGES $pkg"
     fi
 done
 
 if [ ! -z "$MISSING_PACKAGES" ]; then
     echo "Installing missing packages: $MISSING_PACKAGES"
+    # パッケージ名のリストなので意図的に単語分割させる
+    # shellcheck disable=SC2086
     sudo apt-get install -y $MISSING_PACKAGES
 fi
 {{- end }}
