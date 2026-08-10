@@ -21,6 +21,17 @@ inline = """
 # 2 回目以降の起動で fork しないよう組み込みの [[ -d ]] でガードする。
 : "${XDG_STATE_HOME:=$HOME/.local/state}"
 [[ -d $XDG_STATE_HOME/zsh ]] || mkdir -p $XDG_STATE_HOME/zsh
+
+# 補完の設定は compinit より前に済ませておく。
+# fzf-tab はグループ名に compadd の説明文字列 ($expl) を使うので、
+# descriptions format が無いと $expl が空になりグループ表示が機能しない。
+zstyle ':completion:*:descriptions' format '[%d]'
+# fzf-tab 自体は menu zstyle を参照しない。現状 menu select も MENU_COMPLETE も
+# 設定していないので実質 no-op だが、将来入れたときに標準メニューと二重にならない保険。
+zstyle ':completion:*' menu no
+# cd 補完時にディレクトリの中身をプレビューする
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza --icons --tree --level=1 --color=always $realpath'
+
 autoload -Uz compinit
 zsh-defer -a -t0.01 compinit -d "$XDG_STATE_HOME/zsh/zcompdump"
 """
