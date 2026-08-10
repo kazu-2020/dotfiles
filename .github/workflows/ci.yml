@@ -84,117 +84,14 @@ jobs:
           done
           shellcheck "$tmpdir"/*.sh
 
-      # 属性プレフィックス (create_ / executable_ など) の誤りや .chezmoiignore の
-      # パターンずれはテンプレート展開では捕まらないので、実際に apply して確かめる。
-      # スクリプトは brew install などの副作用を伴うため --exclude scripts で外す
-      # (スクリプト本文の検証は上の shellcheck が担当する)。
-      # 配置先は使い捨ての一時ディレクトリで、ランナーの $HOME には触らない
+      # 属性プレフィックスの誤りや .chezmoiignore のパターンずれはテンプレート展開では
+      # 捕まらないので、使い捨ての一時ディレクトリへ実際に apply して確かめる。中身を
+      # ワークフローに埋めず引数なしでも動くスクリプトにしてあるので、手元で同じものを
+      # 実行して落ちたステップを再現できる (ついでにここで自身も shellcheck にかける)
       - name: Verify chezmoi apply
         run: |
-          dest="$(mktemp -d)"
-          echo "APPLY_DEST=$dest" >> "$GITHUB_ENV"
-          chezmoi apply --source "$GITHUB_WORKSPACE" --destination "$dest" --exclude scripts
-          # 冪等性の確認。apply 済みの配置先に対して status が何か報告するなら、
-          # 展開結果が非決定的か、書けていないエントリがある
-          st="$(chezmoi status --source "$GITHUB_WORKSPACE" --destination "$dest" --exclude scripts)"
-          if [ -n "$st" ]; then
-            printf 'NG: apply 後も status が差分を報告する\n%s\n' "$st" >&2
-            exit 1
-          fi
-          echo "OK: chezmoi apply --destination $dest"
-
-      - name: Verify applied attributes and .chezmoiignore
-        run: |
-          rc=0
-
-          # executable_ が実行ビットになっているか。ソース名から配置先への変換は
-          # chezmoi 自身に解決させ、プレフィックスの規則を CI 側に複製しない
-          while IFS= read -r src; do
-            tgt="$(chezmoi target-path --source "$GITHUB_WORKSPACE" \
-                     --destination "$APPLY_DEST" "$src")"
-            if [ -x "$tgt" ]; then
-              echo "OK: executable $src"
-            else
-              echo "NG: 実行ビットが立っていない $src -> $tgt" >&2
-              rc=1
-            fi
-          done < <(find . -path ./.git -prune -o -type f -name '*executable_*' -print | sort)
-
-          # 属性プレフィックスの綴りを間違えると (creat_ / exectuable_ など) chezmoi は
-          # ただの名前として扱い、そのまま配置先のファイル名に残る。配置後の名前が
-          # `xxx_` で始まっていたらこれを疑う (正当な配置先に該当する名前は無い)
-          while IFS= read -r -d '' f; do
-            if [[ "$(basename "$f")" =~ ^[a-z]+_ ]]; then
-              echo "NG: 属性プレフィックスの綴り間違いに見える: ${f#"$APPLY_DEST"/}" >&2
-              rc=1
-            fi
-          done < <(find "$APPLY_DEST" -mindepth 1 -print0)
-
-          # .chezmoiignore に書いたリポジトリ用のファイルが配置されていないこと
-          for f in README.md CLAUDE.md; do
-            if [ -e "$APPLY_DEST/$f" ]; then
-              echo "NG: .chezmoiignore で除外したはずの $f が配置された" >&2
-              rc=1
-            else
-              echo "OK: ignored $f"
-            fi
-          done
-
-          # 06 は darwin 限定。.chezmoiignore のパターンはソース名ではなく展開後の
-          # ターゲット名で書く必要があり、間違えても静かに無視されるので managed で見る
-          # (grep -q にパイプで渡すと pipefail 下で上流が SIGPIPE で落ちうるので、
-          # いったん変数に受けてから照合する)
-          target=".chezmoiscripts/06_check_1password_ssh_agent.sh"
-          scripts="$(chezmoi managed --source "$GITHUB_WORKSPACE" \
-                       --destination "$APPLY_DEST" --include=scripts)"
-          if grep -qxF "$target" <<< "$scripts"; then
-            managed=yes
-          else
-            managed=no
-          fi
-          if [ "$RUNNER_OS" = macOS ]; then
-            want=yes
-          else
-            want=no
-          fi
-          if [ "$managed" = "$want" ]; then
-            echo "OK: $target managed=$managed ($RUNNER_OS)"
-          else
-            echo "NG: $target が $RUNNER_OS で managed=$managed (期待は $want)" >&2
-            rc=1
-          fi
-
-          exit "$rc"
-
-      # テンプレートでない生のシェルスクリプト (dot_config/borders/executable_bordersrc
-      # など) は rendered .chezmoiscripts の shellcheck では拾えない。配置結果を走査して
-      # shebang が sh / bash のものを対象にする (zsh は shellcheck が扱えないので除く)
-      - name: Shellcheck applied shell scripts
-        run: |
-          files=()
-          while IFS= read -r -d '' f; do
-            case "$(head -n 1 "$f")" in
-              '#!'*/sh | '#!'*/sh\ * | '#!'*/bash | '#!'*/bash\ * | \
-                '#!'*env\ sh* | '#!'*env\ bash*)
-                files+=("$f")
-                ;;
-            esac
-          done < <(find "$APPLY_DEST" -type f -print0)
-          if [ "${#files[@]}" -eq 0 ]; then
-            echo "NG: shebang 付きのシェルスクリプトが 1 つも見つからない (走査が壊れている?)" >&2
-            exit 1
-          fi
-          # shebang があるのに実行できない = ソース側で executable_ の付け忘れ
-          rc=0
-          for f in "${files[@]}"; do
-            [ -x "$f" ] || {
-              echo "NG: shebang 付きだが実行ビットが無い: ${f#"$APPLY_DEST"/} (executable_ の付け忘れ?)" >&2
-              rc=1
-            }
-          done
-          printf 'checking: %s\n' "${files[@]}"
-          shellcheck "${files[@]}"
-          exit "$rc"
+          shellcheck .github/scripts/verify-apply.sh
+          .github/scripts/verify-apply.sh "$GITHUB_WORKSPACE"
 
   data-syntax:
     name: data syntax (.chezmoidata)
