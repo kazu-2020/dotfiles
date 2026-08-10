@@ -77,6 +77,8 @@ zsh の状態ファイル (`HISTFILE` と `zcompdump`) は `$XDG_STATE_HOME/zsh/
 
 - **焼き込みに chezmoi の `output` 関数は使えない。** `brew shellenv` は PATH の先頭が既に brew の `bin`/`sbin` だと何も出力しない (`Library/Homebrew/cmd/shellenv.sh` の冒頭)。brew を通したシェルから apply すると空文字列が焼き込まれ、エラーも出ないまま PATH が壊れる。brew 側の出力が変わったときは `env -i PATH=/usr/bin:/bin "$(command -v brew)" shellenv zsh` (PATH を汚さない状態で叩く) と突き合わせて追随する。
 - **キャッシュを無名関数などに包まないこと。** `pure` のように defer せず直接 source されるプラグインの `typeset` が関数ローカルになり、グローバルに置いたつもりの変数が消える。
+- **`sheldon source` の終了ステータスは信用できない。** 取得に失敗したプラグインを黙って落とした出力を吐いて exit 0 する (ERROR は stderr に出るだけ)。欠けた出力をそのまま焼くと mtime だけ新しくなり、次に `plugins.toml` を編集するまで直らない。`sheldon lock` は同じ状況で非 0 を返すのでゲートに使う。
+- **キャッシュは書けてから `mv` で差し替えること。** source されている当のファイルを直接 truncate すると、同時に起動した別のシェルが途中まで書かれたスクリプトを読む。書き損ねたキャッシュが mtime だけ新しくなるのも防げる。
 
 ## 言語ランタイム (mise)
 
