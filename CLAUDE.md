@@ -59,6 +59,10 @@ XDG 準拠のため `ZDOTDIR` を `~/.config/zsh` に寄せている。読み込
 - `hooks/async.zsh.tmpl` — エイリアスと mise 有効化。sheldon の `[plugins.async]` から遅延 source される
 - `hooks/zeno-pre.zsh` / `zeno-post.zsh` — zeno の環境変数とキーバインド。プラグインの `hooks.pre` / `hooks.post` から呼ばれる
 
+zsh の状態ファイル (`HISTFILE` と `zcompdump`) は `$XDG_STATE_HOME/zsh/` にまとめる。**このディレクトリを作るのは `sync.zsh.tmpl` だけ**なので、`.zshrc` での `sync.zsh` → `sheldon source` の順序を崩さないこと。崩すと compinit が dump を黙って作らず毎回フルスキャンに戻る (エラーは出ない)。
+
+配置先を変えるときは `run_once_after_0N_migrate_*.sh.tmpl` を 1 本足して既存環境のファイルを移す (irb / zsh 履歴の前例がある)。移行スクリプトは apply 時にまだ `~/.zshenv` が読まれていない前提で、`XDG_*` ではなく `.chezmoi.destDir` からパスを組み立てる。
+
 **TAB (`^i`) の補完 UI は fzf-tab に寄せる方針**。zeno は `config.yml` の `snippets:` を使うスニペット展開と履歴選択・ghq cd に限定して使い、`zeno-completion` は bind しない。両方を bind すると `zsh-defer` の FIFO 実行で後から読まれた方が勝つため、読み込み順に依存した壊れ方をする。
 
 `sheldon/plugins.toml` の `[templates] defer` 内の `{{ }}` は sheldon (Tera) のテンプレート構文であり、chezmoi のものではない。このファイルは `.tmpl` ではないので chezmoi は展開しないが、`.tmpl` 化する場合は `{{` のエスケープが必要になる。
