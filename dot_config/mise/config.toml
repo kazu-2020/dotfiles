@@ -1,0 +1,5 @@
+[tools]
+node = "24.15.0"
+ruby = "3.4.5"
+uv = "latest"
+npm = "11.12.1"
