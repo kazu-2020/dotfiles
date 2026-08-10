@@ -11,9 +11,16 @@
 
 ### 1. 1Password の設定 (macOS のみ)
 
-SSH 認証と git のコミット署名を 1Password に寄せているため、先に設定しておく。
-[公式ドキュメント](https://developer.1password.com/docs/cli/get-started/)を参考に、
-1Password デスクトップアプリと CLI をインストールし、SSH agent を有効にする。
+SSH 認証と git のコミット署名を 1Password に寄せている。
+デスクトップアプリと CLI は `chezmoi apply` が cask で入れるので事前準備は不要だが、
+**SSH agent の有効化だけは手動**。アプリにサインインしたうえで
+
+設定 > 開発者 > SSH エージェントを使用する
+
+をオンにする ([公式ドキュメント](https://developer.1password.com/docs/ssh/get-started/))。
+サインインが GUI 必須なので apply の中では完結しない。有効化を忘れていると
+`after_06_check_1password_ssh_agent` が apply のたびに手順を出すので、
+先に済ませても後から済ませてもよい。
 
 Linux では SSH agent もコミット署名プログラムも設定されない (署名自体は有効なので、
 必要なら machine-local な設定で上書きする)。
@@ -40,6 +47,7 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply kazu-2020
 | `after_03_migrate_irb_history` | irb の履歴ファイルを新しいパスへ移す (旧環境からの移行用) |
 | `after_04_install_mise_tools` | `~/.config/mise/config.toml` のランタイムを `mise install` |
 | `after_05_set_login_shell` | ログインシェルを zsh にする (Ubuntu では zsh のインストールも) |
+| `after_06_check_1password_ssh_agent` | 1Password の SSH agent が無効なら有効化手順を出す (macOS のみ) |
 
 ログインシェルの変更は `sudo` を使う。`sudo` が使えない環境では apply を止めずに案内だけ出すので、
 その場合は手動で実行する。反映は次回ログインから。

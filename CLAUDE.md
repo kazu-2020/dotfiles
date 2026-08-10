@@ -15,7 +15,7 @@ chezmoi execute-template < dot_config/zsh/dot_zshenv.tmpl   # テンプレート
 chezmoi data              # テンプレートで参照できる変数の一覧
 ```
 
-`.chezmoiscripts/` のスクリプトは `run_once_` なので、内容を変更しない限り再実行されない。強制的に再実行させるには `chezmoi state delete-bucket --bucket=scriptState` を使う。
+`.chezmoiscripts/` のスクリプトは大半が `run_once_` で、内容を変更しない限り再実行されない。強制的に再実行させるには `chezmoi state delete-bucket --bucket=scriptState` を使う (`run_after_06_check_1password_ssh_agent.sh.tmpl` だけは毎回実行する `run_after_`)。
 
 ## ファイル命名規則 (chezmoi の属性プレフィックス)
 
@@ -75,8 +75,13 @@ Go / Node / Ruby / uv などのランタイムは mise に一本化しており�
 
 ## 1Password 連携 (macOS)
 
+- インストール: `.chezmoidata/packages.yaml` の cask (`1password` / `1password-cli`) で入る
 - SSH agent: `dot_config/zsh/dot_zshenv.tmpl` で `SSH_AUTH_SOCK` を 1Password の agent.sock に向けている (darwin のみ)
 - コミット署名: `dot_config/git/config.tmpl` で `gpg.format = ssh` + `commit.gpgsign = true`。署名プログラムは `op` コマンドが存在する macOS でのみ `op-ssh-sign` を設定する条件付きブロックになっている (Linux では署名プログラム未設定)
+
+**SSH agent の有効化そのものは自動化していない。** トグルの実体は 1Password の `settings.json` (`sshAgent.enabled`) だが、初回サインインを済ませるまでこのファイルが存在せず (サインインは GUI 必須)、アプリ起動中の書き換えはメモリ上の状態に上書きされ、かつ非公式フォーマットなのでキー名がアップデートで黙って変わりうる。
+
+代わりに `run_after_06_check_1password_ssh_agent.sh.tmpl` が apply のたびに agent.sock の有無を見て、無効なら有効化手順を stderr に出す。有効なら無音、どのケースでも `exit 0` で apply は止めない。`run_once_` にしないのは、初回 apply の時点ではまだサインインが済んでおらず、一度きりの警告だと有効化し忘れたまま気づけなくなるため。ソケットのパスは `dot_zshenv.tmpl` の `SSH_AUTH_SOCK` と同じ値を書いているので、片方を変えたらもう片方も直すこと。
 
 ## 変更時の注意
 
