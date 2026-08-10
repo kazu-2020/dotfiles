@@ -51,7 +51,7 @@ jobs:
         run: |
           rc=0
           while IFS= read -r f; do
-            if chezmoi execute-template < "$f" > /dev/null; then
+            if chezmoi execute-template --source "$GITHUB_WORKSPACE" < "$f" > /dev/null; then
               echo "OK: $f"
             else
               echo "NG: $f"
@@ -65,7 +65,7 @@ jobs:
           tmpdir="$(mktemp -d)"
           for f in .chezmoiscripts/*.sh.tmpl; do
             out="$tmpdir/$(basename "${f%.tmpl}")"
-            chezmoi execute-template < "$f" > "$out"
+            chezmoi execute-template --source "$GITHUB_WORKSPACE" < "$f" > "$out"
             echo "rendered: $f"
           done
           shellcheck "$tmpdir"/*.sh
