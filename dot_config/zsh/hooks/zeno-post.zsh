@@ -10,7 +10,11 @@ if [[ -n $ZENO_LOADED ]]; then
   bindkey '^x^z' zeno-toggle-auto-snippet
 
   bindkey '^r' zeno-history-selection
-  bindkey '^[' zeno-insert-snippet
+  # ESC 単独 (^[) には bind しない。矢印キーなどのエスケープシーケンス
+  # (^[[A など) と prefix が衝突し、KEYTIMEOUT 分の入力遅延や ESC 連打時の
+  # 誤発動を招くため、^x プレフィックス側に寄せている
+  # (^s は sync.zsh の no_flow_control で解放済み)。
+  bindkey '^x^s' zeno-insert-snippet
   bindkey '^]' zeno-ghq-cd
 fi
 
