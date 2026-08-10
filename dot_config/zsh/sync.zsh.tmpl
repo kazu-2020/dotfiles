@@ -1,8 +1,10 @@
 ### locale ###
 export LANG="en_US.UTF-8"
 
-# 通常は ~/.zshenv が定義済み。未定義でも HISTFILE などが / 直下を指さないようにする
+# 通常は ~/.zshenv が定義済み。未定義でも HISTFILE などが / 直下を指さないようにする。
+# sync.zsh は .zshrc より先に読まれる唯一の場所なので、XDG の既定値はここに集める
 : "${XDG_STATE_HOME:=$HOME/.local/state}"
+: "${XDG_CACHE_HOME:=$HOME/.cache}"
 
 ### uniq path ###
 typeset -gU PATH path
@@ -25,14 +27,12 @@ path=(
     "$path[@]"
 )
 
-{{/* bin/brew が実体なのは /opt/homebrew (Apple Silicon) だけで、/usr/local (Intel) と
-       linuxbrew の bin/brew は $prefix/Homebrew/bin/brew への symlink。brew はこの差を
-       そのまま HOMEBREW_REPOSITORY に出す (bin/brew の symlink 解決を参照) */ -}}
+{{/* prefix は .brew.path (.chezmoi.toml.tmpl が OS/アーキテクチャごとに決める) から
+       導出する。値を持たせると path と食い違いうるので、単一の情報源から引く。
+       repository は brew が bin/brew の symlink を解決して決めるもので、実体を置く
+       /opt/homebrew だけ prefix と一致し、他 (Intel / linuxbrew) は $prefix/Homebrew */ -}}
 {{- $brewPrefix := .brew.path | dir | dir -}}
-{{- $brewRepository := $brewPrefix -}}
-{{- if ne $brewPrefix "/opt/homebrew" -}}
-{{-   $brewRepository = printf "%s/Homebrew" $brewPrefix -}}
-{{- end -}}
+{{- $brewRepository := ternary $brewPrefix (printf "%s/Homebrew" $brewPrefix) (eq $brewPrefix "/opt/homebrew") -}}
 ### brew ###
 # `brew shellenv` の出力を chezmoi の展開時に焼き込んだもの。起動のたびに brew
 # (bash スクリプト) を fork せずに済む。macOS 14+ の shellenv は PATH の構築を
@@ -40,10 +40,8 @@ path=(
 #
 # 焼き込みに chezmoi の output 関数は使えない。shellenv は PATH の先頭が既に
 # brew の bin/sbin だと何も出力しない仕様なので、brew を通したシェルから apply
-# すると空文字列が焼き込まれ、エラーも出ないまま PATH が壊れる。
-#
-# brew を入れ替えて出力が変わったら、`env -i PATH=/usr/bin:/bin {{ .brew.path }} shellenv zsh`
-# (PATH を汚さない状態で叩く) と突き合わせて追随する。
+# すると空文字列が焼き込まれ、エラーも出ないまま PATH が壊れる。追随のしかたは
+# CLAUDE.md の「起動時に外部コマンドを呼ばない」を参照。
 export HOMEBREW_PREFIX={{ $brewPrefix | quote }}
 export HOMEBREW_CELLAR={{ printf "%s/Cellar" $brewPrefix | quote }}
 export HOMEBREW_REPOSITORY={{ $brewRepository | quote }}
@@ -51,7 +49,6 @@ export INFOPATH="{{ $brewPrefix }}/share/info:${INFOPATH:-}"
 # MANPATH は未設定なら触らない (先頭のコロンが system の man パスを意味するため)
 [[ -z ${MANPATH-} ]] || export MANPATH=":${MANPATH#:}"
 
-# shellenv は fpath の先頭に挿し、FPATH を export する
 fpath=(
     {{ $brewPrefix }}/share/zsh/site-functions(N-/)
     "$fpath[@]"
