@@ -1,7 +1,7 @@
 #! /bin/sh
 echo "brew path: {{ .brew.path }}"
 
-if command -v brew &> /dev/null
+if command -v brew >/dev/null 2>&1
 then
   echo "Homebrew is already installed."
   exit 0

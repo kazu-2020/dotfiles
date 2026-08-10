@@ -17,6 +17,8 @@ post = "zsh-defer source $ZDOTDIR/hooks/zeno-post.zsh"
 
 [plugins.compinit]
 inline = """
+# ディレクトリが無いと compinit は dump を黙って作らず、毎回フルスキャンになる
+mkdir -p "$XDG_STATE_HOME/zsh"
 autoload -Uz compinit
 zsh-defer -a -t0.01 compinit -d "$XDG_STATE_HOME/zsh/zcompdump"
 """
