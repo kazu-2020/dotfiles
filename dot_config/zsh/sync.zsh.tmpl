@@ -37,7 +37,12 @@ eval "$({{ .brew.path  }} shellenv)"
 export PURE_GIT_PULL=0
 
 ### history ###
-export HISTFILE="$XDG_STATE_HOME/zsh_history"
+# zcompdump と同じ $XDG_STATE_HOME/zsh/ に置く。ディレクトリが無いと zsh は履歴を
+# 保存できないので、ここで作る (sheldon より前に読まれる唯一の場所)。
+# 2 回目以降の起動で fork しないよう組み込みの [[ -d ]] でガードする。
+[[ -d $XDG_STATE_HOME/zsh ]] || mkdir -p $XDG_STATE_HOME/zsh
+
+export HISTFILE="$XDG_STATE_HOME/zsh/history"
 # HISTSIZE < SAVEHIST だと古い履歴がメモリに載らず Ctrl-R で引けないので揃える
 export HISTSIZE=100000
 export SAVEHIST=100000
