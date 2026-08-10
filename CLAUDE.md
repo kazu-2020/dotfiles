@@ -28,12 +28,18 @@ chezmoi data              # テンプレートで参照できる変数の一覧
 
 ## テンプレートのデータソース
 
-`.chezmoi.toml.tmpl` が生成する `~/.config/chezmoi/chezmoi.toml` がテンプレート変数の実体。ここが 2 つの役割を持つ:
+テンプレート変数の実体は 2 箇所にあり、chezmoi が両者を再帰的にマージする。
 
-1. `[data.brew.packages]` — インストールするパッケージ一覧 (`common` / `mac` / `cask.common` / `cask.external`)。`cask.external` は `chezmoi init` 時の `promptBool` で入れるか選ばせる。パッケージを追加する場合はここを編集する。
-2. `[data.brew] path` — OS/アーキテクチャごとの brew パス (`/opt/homebrew`, `/usr/local`, `/home/linuxbrew/.linuxbrew`)。`sync.zsh.tmpl` の `eval "$({{ .brew.path }} shellenv)"` などがこれを参照する。
+1. `.chezmoidata/packages.yaml` — インストールするパッケージ一覧 (`brew.packages` の `common` / `mac` / `cask.common`)。**パッケージを追加する場合はここを編集する。**
+2. `.chezmoi.toml.tmpl` が生成する `~/.config/chezmoi/chezmoi.toml` — `promptBool` や OS 判定に依存して `.chezmoidata` に置けないもの:
+   - `[data.brew.packages.cask] external` — `chezmoi init` 時の `promptBool` で入れるか選ばせる
+   - `[data.brew] path` — OS/アーキテクチャごとの brew パス (`/opt/homebrew`, `/usr/local`, `/home/linuxbrew/.linuxbrew`)。`sync.zsh.tmpl` の `eval "$({{ .brew.path }} shellenv)"` などがこれを参照する
 
-**`.chezmoi.toml.tmpl` を変更しても既存環境の `chezmoi.toml` は自動更新されない。** 反映には `chezmoi init` の再実行が必要。
+`.chezmoidata/` は chezmoi が毎回自動で読むので、1 を編集した場合は `chezmoi apply` するだけで反映される。
+
+**一方 `.chezmoi.toml.tmpl` (2) を変更しても既存環境の `chezmoi.toml` は自動更新されない。** 反映には `chezmoi init` の再実行が必要。
+
+なお **`chezmoi.toml` の `data` は `.chezmoidata` より優先される**。両者で同じキーを定義すると `.chezmoidata` 側がエラーにならず静かに無視されるので、キーを重複させないこと。
 
 ## zsh 設定の構造
 
