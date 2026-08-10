@@ -22,7 +22,7 @@ for pkg in $REQUIRED_PACKAGES; do
     fi
 done
 
-if [ ! -z "$MISSING_PACKAGES" ]; then
+if [ -n "$MISSING_PACKAGES" ]; then
     echo "Installing missing packages: $MISSING_PACKAGES"
     # パッケージ名のリストなので意図的に単語分割させる
     # shellcheck disable=SC2086
