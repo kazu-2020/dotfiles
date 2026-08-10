@@ -44,6 +44,7 @@ jobs:
           for v in true false; do
             chezmoi execute-template --init --source "$GITHUB_WORKSPACE" \
               --promptBool "Do you want to install external casks=$v" \
+              --promptBool "Is this a work machine=$v" \
               < .chezmoi.toml.tmpl > "$tmpcfg/$v.toml"
           done
           grep -qF 'external = []' "$tmpcfg/false.toml" || {
@@ -54,9 +55,18 @@ jobs:
             echo "NG: promptBool=true が展開結果に反映されていない (プロンプト文言の不一致?)" >&2
             exit 1
           fi
+          grep -qE '^ *work = false' "$tmpcfg/false.toml" || {
+            echo "NG: promptBool=false で work = false にならない" >&2
+            exit 1
+          }
+          grep -qE '^ *work = true' "$tmpcfg/true.toml" || {
+            echo "NG: work の promptBool が展開結果に反映されていない (プロンプト文言の不一致?)" >&2
+            exit 1
+          }
           echo "OK: .chezmoi.toml.tmpl (promptBool 両分岐)"
           chezmoi init --source "$GITHUB_WORKSPACE" \
-            --promptBool "Do you want to install external casks=true"
+            --promptBool "Do you want to install external casks=true" \
+            --promptBool "Is this a work machine=true"
 
       # .chezmoiignore / .chezmoiremove は拡張子に関係なく常にテンプレートとして
       # 解釈されるため、*.tmpl と同様に検証対象へ含める
