@@ -1,4 +1,4 @@
-IRB.conf[:HISTORY_FILE] = File.join(
-  ENV.fetch('XDG_STATE_HOME', File.expand_path('~/.local/state')),
-  '.irb_history'
-)
+xdg_state_home = ENV['XDG_STATE_HOME']
+xdg_state_home = File.expand_path('~/.local/state') if xdg_state_home.nil? || xdg_state_home.empty?
+
+IRB.conf[:HISTORY_FILE] = File.join(xdg_state_home, '.irb_history')
