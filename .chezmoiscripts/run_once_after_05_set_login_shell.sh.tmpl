@@ -1,0 +1,51 @@
+#!/bin/sh
+set -eu
+
+# ログインシェルを zsh にする。
+# chezmoi apply は非対話で流れるため、chsh のパスワード入力を避けて sudo 経由で叩く。
+# ここで失敗しても apply 全体は止めず、手動手順を案内するだけにする。
+
+{{ if eq .chezmoi.os "linux" -}}
+if ! command -v zsh >/dev/null 2>&1; then
+  echo "Installing zsh..."
+  # 新規環境ではパッケージリストが空なので update してから install する
+  sudo apt-get update
+  sudo apt-get install -y zsh
+fi
+{{ end -}}
+
+zsh_path="$(command -v zsh || true)"
+if [ -z "$zsh_path" ]; then
+  echo "zsh が見つからないのでログインシェルの変更をスキップする 🙅" >&2
+  exit 0
+fi
+
+user="$(id -un)"
+
+{{ if eq .chezmoi.os "darwin" -}}
+# macOS には getent がないので dscl から引く
+current_shell="$(dscl . -read "/Users/$user" UserShell 2>/dev/null | awk '{ print $2 }')"
+{{- else -}}
+current_shell="$(getent passwd "$user" | cut -d: -f7)"
+{{- end }}
+
+# /bin/zsh と brew の zsh を行き来させたくないので、zsh でありさえすれば何もしない
+case "$current_shell" in
+  */zsh)
+    echo "Login shell is already zsh ($current_shell). 🙆‍♂️"
+    exit 0
+    ;;
+esac
+
+# chsh は /etc/shells に載っているシェルしか受け付けない
+if ! grep -qxF "$zsh_path" /etc/shells 2>/dev/null; then
+  echo "Adding $zsh_path to /etc/shells"
+  echo "$zsh_path" | sudo tee -a /etc/shells >/dev/null
+fi
+
+echo "Changing login shell: ${current_shell:-unknown} -> $zsh_path"
+if sudo chsh -s "$zsh_path" "$user"; then
+  echo "Login shell changed to zsh. 次のログインから反映される 🎉"
+else
+  echo "ログインシェルの変更に失敗した 😱 手動で 'chsh -s $zsh_path' を実行すること" >&2
+fi
