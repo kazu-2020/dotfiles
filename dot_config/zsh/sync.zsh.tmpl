@@ -1,6 +1,9 @@
 ### locale ###
 export LANG="en_US.UTF-8"
 
+# 通常は ~/.zshenv が定義済み。未定義でも HISTFILE などが / 直下を指さないようにする
+: "${XDG_STATE_HOME:=$HOME/.local/state}"
+
 ### uniq path ###
 typeset -gU PATH path
 typeset -gU FPATH fpath
