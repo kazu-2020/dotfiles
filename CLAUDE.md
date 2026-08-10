@@ -65,7 +65,9 @@ XDG 準拠のため `ZDOTDIR` を `~/.config/zsh` に寄せている。読み込
 
 ## 言語ランタイム (mise)
 
-Go / Node / Ruby / uv などのランタイムは mise に一本化しており、バージョンは `dot_config/mise/config.toml` が唯一の情報源。mise 本体は brew bundle で入り、`.chezmoiscripts/run_once_after_04_install_mise_tools.sh.tmpl` が `chezmoi apply` の中で `mise install` まで済ませる。
+Go / Node / Ruby / uv などのランタイムは mise に一本化しており、バージョンは `dot_config/mise/config.toml` が唯一の情報源。mise 本体は brew bundle で入り、`.chezmoiscripts/run_onchange_after_04_install_mise_tools.sh.tmpl` が `chezmoi apply` の中で `mise install` まで済ませる。
+
+このスクリプトが `run_once_` ではなく `run_onchange_` なのは、再実行判定が**展開後のスクリプト本文のハッシュ**で行われるため。`run_once_` だと `dot_config/mise/config.toml` のバージョンを上げても本文が変わらず再実行されず、新しい config が配置されたのにランタイムが入らない状態になる。本文に `include "dot_config/mise/config.toml" | sha256sum` のテンプレート呼び出しをコメントとして埋めて、config の変更を再実行の契機にしている。`run_once_` のままハッシュだけ埋めても変更時には走るが、`run_once_` は過去に実行した本文をすべて記憶しているため**バージョンを前の値に戻したときに再実行されない**。`run_onchange_` は直前の本文としか比較しないので revert でも走る。ランタイム以外にも「ソースの別ファイルの変更で再実行したいスクリプト」を書く場合は同じ手を使う。
 
 **`mise use -g` は使わないこと。** 書き込み先が `~/.config/mise/config.toml` そのものなので、その場では切り替わっても次の `chezmoi apply` でソース側の内容に静かに巻き戻る (`chezmoi update` を回していると特に気づきにくい)。バージョンを変えるときはソースの `dot_config/mise/config.toml` を編集して apply する。
 

@@ -5,6 +5,15 @@ set -eu
 # mise activate が仕込む auto-install は対話シェルでコマンドを叩いたときしか効かず、
 # Neovim から起動する LSP や Makefile 経由の実行は PATH に無いまま落ちるため、
 # apply の中でランタイムを実体化させておく。
+#
+# run_once ではなく run_onchange なのは、スクリプトの再実行判定が「展開後の本文の
+# ハッシュ」で行われるため。run_once だと config.toml のバージョンだけ上げても
+# 本文が変わらず再実行されず、新しい config が置かれたのにランタイムが入らない
+# 状態になる。config.toml のハッシュを本文に埋めて、変更を再実行の契機にする。
+# run_once のままハッシュだけ埋める手もあるが、run_once は「過去に実行した本文」を
+# すべて覚えているため、バージョンを前の値に戻したときに再実行されない。
+# run_onchange は直前の本文としか比較しないので revert でも走る。
+# mise config: {{ include "dot_config/mise/config.toml" | sha256sum }}
 
 # 初回 apply では ~/.zshenv がまだ読まれておらず brew の PATH が通っていない
 if [ -x {{ .brew.path | squote }} ]
@@ -21,7 +30,7 @@ fi
 {{ if eq .chezmoi.os "linux" -}}
 # ruby は mise (ruby-build) がソースからビルドするのでヘッダ類が要る。
 # Homebrew 導入時の REQUIRED_PACKAGES には含まれていない分をここで補う。
-REQUIRED_PACKAGES="libyaml-dev libssl-dev zlib1g-dev"
+REQUIRED_PACKAGES="libyaml-dev libssl-dev zlib1g-dev libffi-dev libreadline-dev libgmp-dev"
 MISSING_PACKAGES=""
 
 for pkg in $REQUIRED_PACKAGES; do
