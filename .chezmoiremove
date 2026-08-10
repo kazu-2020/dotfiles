@@ -1,0 +1,6 @@
+# ソースから削除済みだが配置先には残っている hooks の残骸。
+# 全環境に行き渡ったら、このファイルごと削除してよい。
+.config/zsh/hooks/manager.zsh
+.config/zsh/hooks/alias.zsh
+.config/zsh/hooks/other.zsh
+.config/zsh/hooks/path.zsh
