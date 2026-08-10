@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  # macOS (arm64 / amd64) と Ubuntu の実ランナー上で chezmoi のテンプレート展開を検証する。
+  # .chezmoi.os / .chezmoi.arch は execute-template で偽装できないため、OS ごとに実機で回す。
+  verify:
+    name: verify (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest # linux / amd64
+          - macos-latest # darwin / arm64 (Apple Silicon)
+          - macos-15-intel # darwin / amd64 (Intel)
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install chezmoi
+        run: |
+          sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      # Ubuntu ランナーには shellcheck がプリインストールされている
+      - name: Install shellcheck (macOS)
+        if: runner.os == 'macOS'
+        run: brew install shellcheck
+
+      # .chezmoi.toml.tmpl を promptBool の両分岐で展開し、分岐が展開結果に反映されて
+      # いることをアサートする (--promptBool はプロンプト文言が一致しないとエラーに
+      # ならず黙って false になるため、展開が成功するだけでは検証にならない)。
+      # あわせて後続の execute-template が参照する chezmoi.toml (brew.path など) を生成する
+      - name: Verify .chezmoi.toml.tmpl and generate config
+        run: |
+          tmpcfg="$(mktemp -d)"
+          for v in true false; do
+            chezmoi execute-template --init --source "$GITHUB_WORKSPACE" \
+              --promptBool "Do you want to install external casks=$v" \
+              < .chezmoi.toml.tmpl > "$tmpcfg/$v.toml"
+          done
+          grep -qF 'external = []' "$tmpcfg/false.toml" || {
+            echo "NG: promptBool=false で external casks が空リストにならない" >&2
+            exit 1
+          }
+          if grep -qF 'external = []' "$tmpcfg/true.toml"; then
+            echo "NG: promptBool=true が展開結果に反映されていない (プロンプト文言の不一致?)" >&2
+            exit 1
+          fi
+          echo "OK: .chezmoi.toml.tmpl (promptBool 両分岐)"
+          chezmoi init --source "$GITHUB_WORKSPACE" \
+            --promptBool "Do you want to install external casks=true"
+
+      # .chezmoiignore / .chezmoiremove は拡張子に関係なく常にテンプレートとして
+      # 解釈されるため、*.tmpl と同様に検証対象へ含める
+      - name: Verify all templates render
+        run: |
+          rc=0
+          while IFS= read -r f; do
+            if chezmoi execute-template --source "$GITHUB_WORKSPACE" < "$f" > /dev/null; then
+              echo "OK: $f"
+            else
+              echo "NG: $f"
+              rc=1
+            fi
+          done < <(find . \( -name '*.tmpl' -o -name '.chezmoiignore' -o -name '.chezmoiremove' \) \
+                     ! -name '.chezmoi.toml.tmpl' ! -path './.git/*' | sort)
+          exit "$rc"
+
+      - name: Shellcheck rendered .chezmoiscripts
+        run: |
+          tmpdir="$(mktemp -d)"
+          for f in .chezmoiscripts/*.sh.tmpl; do
+            out="$tmpdir/$(basename "${f%.tmpl}")"
+            chezmoi execute-template --source "$GITHUB_WORKSPACE" < "$f" > "$out"
+            echo "rendered: $f"
+          done
+          shellcheck "$tmpdir"/*.sh
+
+  data-syntax:
+    name: data syntax (.chezmoidata)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # chezmoi は .chezmoidata/ から .yaml / .yml / .json / .toml をすべて読むので
+      # 全形式を検証する。pip の --break-system-packages は PEP 668 (externally-managed)
+      # な system Python へのフォールバックインストール用
+      - name: Validate .chezmoidata data files
+        run: |
+          python3 -c "import yaml" 2>/dev/null \
+            || python3 -m pip install --user --quiet --break-system-packages pyyaml
+          shopt -s nullglob
+          files=(.chezmoidata/*.yaml .chezmoidata/*.yml .chezmoidata/*.json .chezmoidata/*.toml)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "NG: .chezmoidata に検証対象のデータファイルがない" >&2
+            exit 1
+          fi
+          for f in "${files[@]}"; do
+            case "$f" in
+              *.yaml | *.yml) python3 -c "import sys, yaml; yaml.safe_load(open(sys.argv[1]))" "$f" ;;
+              *.json) python3 -c "import sys, json; json.load(open(sys.argv[1]))" "$f" ;;
+              *.toml) python3 -c "import sys, tomllib; tomllib.load(open(sys.argv[1], 'rb'))" "$f" ;;
+            esac
+            echo "OK: $f"
+          done
