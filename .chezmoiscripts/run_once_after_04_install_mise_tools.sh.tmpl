@@ -1,0 +1,49 @@
+#!/bin/sh
+set -eu
+
+# mise 本体は 02 の brew bundle で入り、~/.config/mise/config.toml もこの時点で配置済み。
+# mise activate が仕込む auto-install は対話シェルでコマンドを叩いたときしか効かず、
+# Neovim から起動する LSP や Makefile 経由の実行は PATH に無いまま落ちるため、
+# apply の中でランタイムを実体化させておく。
+
+# 初回 apply では ~/.zshenv がまだ読まれておらず brew の PATH が通っていない
+if [ -x {{ .brew.path | squote }} ]
+then
+  eval "$({{ .brew.path }} shellenv)"
+fi
+
+if ! command -v mise >/dev/null 2>&1
+then
+  echo "mise command not found 😱"
+  exit 1
+fi
+
+{{ if eq .chezmoi.os "linux" -}}
+# ruby は mise (ruby-build) がソースからビルドするのでヘッダ類が要る。
+# Homebrew 導入時の REQUIRED_PACKAGES には含まれていない分をここで補う。
+REQUIRED_PACKAGES="libyaml-dev libssl-dev zlib1g-dev"
+MISSING_PACKAGES=""
+
+for pkg in $REQUIRED_PACKAGES; do
+    if ! dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null | grep -q "ok installed"; then
+        MISSING_PACKAGES="$MISSING_PACKAGES $pkg"
+    fi
+done
+
+if [ -n "$MISSING_PACKAGES" ]; then
+    echo "Installing missing packages:$MISSING_PACKAGES"
+    # 新規環境ではパッケージリストが空なので update してから install する
+    sudo apt-get update
+    # パッケージ名のリストなので意図的に単語分割させる
+    # shellcheck disable=SC2086
+    sudo apt-get install -y $MISSING_PACKAGES
+fi
+{{- end }}
+
+# run_once スクリプトは非対話で流れるので確認プロンプトを抑止する
+MISE_YES=1
+export MISE_YES
+
+mise install
+
+echo "mise tools installation completed 🎉"

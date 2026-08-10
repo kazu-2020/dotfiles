@@ -63,6 +63,14 @@ XDG 準拠のため `ZDOTDIR` を `~/.config/zsh` に寄せている。読み込
 
 新しいシェル設定を追加する際は、遅延させてよいものは `hooks/async.zsh.tmpl` に、PATH や `setopt` など即時に必要なものは `sync.zsh.tmpl` に置く。
 
+## 言語ランタイム (mise)
+
+Go / Node / Ruby / uv などのランタイムは mise に一本化しており、バージョンは `dot_config/mise/config.toml` が唯一の情報源。mise 本体は brew bundle で入り、`.chezmoiscripts/run_once_after_04_install_mise_tools.sh.tmpl` が `chezmoi apply` の中で `mise install` まで済ませる。
+
+**`mise use -g` は使わないこと。** 書き込み先が `~/.config/mise/config.toml` そのものなので、その場では切り替わっても次の `chezmoi apply` でソース側の内容に静かに巻き戻る (`chezmoi update` を回していると特に気づきにくい)。バージョンを変えるときはソースの `dot_config/mise/config.toml` を編集して apply する。
+
+`mise activate` の auto-install (`not_found_auto_install`) は対話シェルでコマンドを叩いたときしか効かない。Neovim から起動する LSP や Makefile 経由の実行はそれでは救えないため、apply 時の `mise install` を省略しない。
+
 ## 1Password 連携 (macOS)
 
 - SSH agent: `dot_config/zsh/dot_zshenv.tmpl` で `SSH_AUTH_SOCK` を 1Password の agent.sock に向けている (darwin のみ)
