@@ -24,8 +24,22 @@ chezmoi data              # テンプレートで参照できる変数の一覧
 - `dot_foo` → `~/.foo`、`dot_config/` → `~/.config/`
 - `executable_foo` → 実行ビットを立てて配置 (例: `dot_config/borders/executable_bordersrc`)
 - `*.tmpl` → Go テンプレートとして展開してから配置 (拡張子は落ちる)
-- `.chezmoiignore` / `.chezmoiremove` / `.chezmoi.toml.tmpl` / `.chezmoiscripts/` / `.chezmoidata/` は chezmoi 自身の設定で、ホームには配置されない
+- `.chezmoiignore` / `.chezmoiremove` / `.chezmoi.toml.tmpl` / `.chezmoiscripts/` / `.chezmoidata/` / `.chezmoiversion` は chezmoi 自身の設定で、ホームには配置されない
 - `.chezmoiremove` に書いたパスは `chezmoi apply` で**削除される**。ソースから消しただけでは配置済みファイルは残るため、その後始末に使う (全環境に行き渡ったらエントリごと消してよい)
+
+## chezmoi の最低バージョン (`.chezmoiversion`)
+
+要求する chezmoi の最低バージョンを `.chezmoiversion` で宣言している。これより古い chezmoi
+で apply すると、意味の分かりにくいテンプレートエラーではなく「バージョンが古い」という
+明確なエラーで止まる。
+
+現在の値は **2.34.2**。根拠は `.chezmoidata/` を**ディレクトリ**として使っている点で、
+ディレクトリ対応が 2.34.0、そこに複数ファイルを置けるようになったのが 2.34.2。
+`promptBoolOnce` (2.20.0) など他の依存はこれより古い。
+
+**このファイルはコメントを書けない。** chezmoi は中身全体を trim して semver として
+パースするので、`2.34.2` の 1 行だけを置くこと (先頭に `v` を付けるのも不可)。
+新しい機能に依存し始めたときは、ここの値を上げる根拠とあわせてこの節も更新する。
 
 ## テンプレートのデータソース
 
