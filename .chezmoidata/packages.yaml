@@ -15,6 +15,7 @@ brew:
       - jq
       - eza
       - ripgrep
+      - procs
     mac:
       - borders
     cask:

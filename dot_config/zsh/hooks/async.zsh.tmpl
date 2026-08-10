@@ -1,7 +1,10 @@
 alias rm='rm -i'
 alias ll='ls -lh'
 alias la='ls -a'
-alias wget="wget --hsts-file=$XDG_DATA_HOME/wget-hsts"
+
+if command -v wget >/dev/null 2>&1; then
+  alias wget="wget --hsts-file=$XDG_DATA_HOME/wget-hsts"
+fi
 
 if command -v nvim >/dev/null 2>&1; then
   alias vim='nvim'
