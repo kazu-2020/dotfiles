@@ -57,7 +57,7 @@ chsh -s "$(command -v zsh)"
 | `.chezmoiscripts/` | apply 時に走るスクリプト |
 | `dot_config/zsh/` | zsh 設定。`ZDOTDIR` を `~/.config/zsh` に寄せ、sheldon で非同期ロード |
 | `dot_config/mise/config.toml` | 言語ランタイム (Go / Node / Ruby / uv) のバージョン。唯一の情報源 |
-| `dot_config/git/`, `nvim/`, `starship.toml`, ... | 各ツールの設定 |
+| `dot_config/git/`, `nvim/`, `eza/`, ... | 各ツールの設定 |
 
 ファイル名のプレフィックスが配置先とパーミッションを決める chezmoi の規約に従う
 (`dot_foo` → `~/.foo`、`executable_` → 実行ビット、`*.tmpl` → テンプレート展開)。

@@ -60,5 +60,15 @@ inline = """
 zsh-defer source "$ZDOTDIR/hooks/async.zsh"
 """
 
-[plugins.starship]
-inline = 'eval "$(starship init zsh)"'
+# pure は git 情報を zsh-async で非同期に取るため、プロンプトの描画が git の完了を
+# 待たない。starship のようにプロンプトのたびにバイナリを fork することもない。
+#
+# defer しないこと。遅延させると最初のプロンプトが素の "%" で描画されてから
+# pure に差し替わる。source 自体は 10ms 程度で、fork も走らない。
+#
+# PURE_* の設定変数は sync.zsh にある。
+#
+# async.zsh が先。pure.zsh は読み込み時に async の関数を参照する。
+[plugins.pure]
+github = "sindresorhus/pure"
+use = ["async.zsh", "pure.zsh"]

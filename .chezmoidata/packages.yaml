@@ -15,7 +15,6 @@ brew:
       - fzf
       - git
       - ghq
-      - starship
       - neovim
       - jq
       - eza
