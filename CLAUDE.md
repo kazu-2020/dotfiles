@@ -56,6 +56,8 @@ XDG 準拠のため `ZDOTDIR` を `~/.config/zsh` に寄せている。読み込
 - `hooks/async.zsh.tmpl` — エイリアスと mise 有効化。sheldon の `[plugins.async]` から遅延 source される
 - `hooks/zeno-pre.zsh` / `zeno-post.zsh` — zeno の環境変数とキーバインド。プラグインの `hooks.pre` / `hooks.post` から呼ばれる
 
+**TAB (`^i`) の補完 UI は fzf-tab に寄せる方針**。zeno は `config.yml` の `snippets:` を使うスニペット展開と履歴選択・ghq cd に限定して使い、`zeno-completion` は bind しない。両方を bind すると `zsh-defer` の FIFO 実行で後から読まれた方が勝つため、読み込み順に依存した壊れ方をする。
+
 `sheldon/plugins.toml` の `[templates] defer` 内の `{{ }}` は sheldon (Tera) のテンプレート構文であり、chezmoi のものではない。このファイルは `.tmpl` ではないので chezmoi は展開しないが、`.tmpl` 化する場合は `{{` のエスケープが必要になる。
 
 `hooks/manager.zsh.tmpl` は現状どこからも読み込まれていない (内容は `async.zsh.tmpl` と重複)。
