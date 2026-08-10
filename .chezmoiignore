@@ -11,11 +11,9 @@ CLAUDE.md
 # 仕事用の環境変数は仕事マシンにだけ配置する。work は .chezmoi.toml.tmpl の
 # promptBoolOnce 由来なので、値を変えるには chezmoi init のやり直しが必要。
 #
-# chezmoi は missingkey=error でテンプレートを評価するため、`.work` を直接書くと
-# work を持たない古い chezmoi.toml の環境で .chezmoiignore 自体が展開に失敗し、
-# apply が丸ごと止まる。init 前でも動くよう hasKey で受けてから読む
-{{ $work := false -}}
-{{ if hasKey . "work" }}{{ $work = .work }}{{ end -}}
-{{ if not $work -}}
+# `.work` を直接書かないのは、chezmoi が missingkey=error で評価するため。work を
+# 持たない古い chezmoi.toml では .chezmoiignore 自体が展開に失敗し apply が丸ごと
+# 止まる。dig なら既定値で受けられるので init 前でも動く
+{{ if not (dig "work" false .) -}}
 .config/zsh/work.zsh
 {{ end -}}
