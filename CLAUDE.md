@@ -32,8 +32,8 @@ chezmoi data              # テンプレートで参照できる変数の一覧
 テンプレート変数の実体は 2 箇所にあり、chezmoi が両者を再帰的にマージする。
 
 1. `.chezmoidata/packages.yaml` — インストールするパッケージ一覧 (`brew.packages` の `common` / `mac` / `cask.common`)。**パッケージを追加する場合はここを編集する。**
-2. `.chezmoi.toml.tmpl` が生成する `~/.config/chezmoi/chezmoi.toml` — `promptBool` や OS 判定に依存して `.chezmoidata` に置けないもの:
-   - `[data.brew.packages.cask] external` — `chezmoi init` 時の `promptBool` で入れるか選ばせる
+2. `.chezmoi.toml.tmpl` が生成する `~/.config/chezmoi/chezmoi.toml` — prompt や OS 判定に依存して `.chezmoidata` に置けないもの:
+   - `[data.brew.packages.cask] external` / `installExternal` — `chezmoi init` 時の `promptBoolOnce` で入れるか選ばせる。回答は `installExternal` として書き出され、次回以降の `chezmoi init` はそれを引き継ぐので再質問されない (質問し直したい場合は `chezmoi.toml` からこのキーを消す)
    - `[data.brew] path` — OS/アーキテクチャごとの brew パス (`/opt/homebrew`, `/usr/local`, `/home/linuxbrew/.linuxbrew`)。`sync.zsh.tmpl` の `eval "$({{ .brew.path }} shellenv)"` などがこれを参照する
 
 `.chezmoidata/` は chezmoi が毎回自動で読むので、1 を編集した場合は `chezmoi apply` するだけで反映される。
