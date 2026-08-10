@@ -1,4 +1,11 @@
+require 'fileutils'
+
 xdg_state_home = ENV['XDG_STATE_HOME']
 xdg_state_home = File.expand_path('~/.local/state') if xdg_state_home.nil? || xdg_state_home.empty?
 
-IRB.conf[:HISTORY_FILE] = File.join(xdg_state_home, '.irb_history')
+# irb は履歴ファイルの親ディレクトリを作らないので、ここで用意しておく。
+# 履歴には秘匿値が混ざりうるため 0700 にする (履歴ファイル自体は irb が 0600 で作る)。
+history_dir = File.join(xdg_state_home, 'irb')
+FileUtils.mkdir_p(history_dir, mode: 0o700)
+
+IRB.conf[:HISTORY_FILE] = File.join(history_dir, 'history')

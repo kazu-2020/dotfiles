@@ -1,0 +1,27 @@
+#!/bin/sh
+set -eu
+
+# irb の履歴ファイルを $XDG_STATE_HOME/.irb_history から
+# $XDG_STATE_HOME/irb/history へ移す (隠しファイルをやめてツール別に切り直した)。
+# 初回インストール時はまだ ~/.zshenv が読まれていないため XDG 変数が未定義。
+# 環境変数に頼らず、chezmoi が知っている適用先からパスを組み立てる。
+dest={{ .chezmoi.destDir | squote }}
+
+state="${XDG_STATE_HOME:-$dest/.local/state}"
+old="$state/.irb_history"
+new="$state/irb/history"
+
+# 旧ファイルがなければ何もしない (新規環境ではこれが常態)
+[ -f "$old" ] || exit 0
+
+# 移行先が既にあるなら上書きせず旧ファイルを残す (履歴を失わないため)
+if [ -e "$new" ]; then
+  echo "skip: $new が既にあるため $old は移動しない" >&2
+  exit 0
+fi
+
+mkdir -p "$(dirname "$new")"
+chmod 700 "$(dirname "$new")"
+mv "$old" "$new"
+chmod 600 "$new"
+echo "moved: $old -> $new"
