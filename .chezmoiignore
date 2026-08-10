@@ -1,2 +1,9 @@
 README.md
 CLAUDE.md
+
+# 06 は darwin 専用かつ run_after_ (毎回実行) なので、テンプレートで本文を空に
+# するのではなくスクリプトごと除外する。中身が空でも apply のたびにプロセスが
+# 起きてしまうため。パターンはソース名ではなく展開後のターゲット名で書くこと
+{{ if ne .chezmoi.os "darwin" -}}
+.chezmoiscripts/06_check_1password_ssh_agent.sh
+{{ end -}}
