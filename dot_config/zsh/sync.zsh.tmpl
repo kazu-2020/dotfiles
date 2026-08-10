@@ -25,8 +25,46 @@ path=(
     "$path[@]"
 )
 
+{{/* bin/brew が実体なのは /opt/homebrew (Apple Silicon) だけで、/usr/local (Intel) と
+       linuxbrew の bin/brew は $prefix/Homebrew/bin/brew への symlink。brew はこの差を
+       そのまま HOMEBREW_REPOSITORY に出す (bin/brew の symlink 解決を参照) */ -}}
+{{- $brewPrefix := .brew.path | dir | dir -}}
+{{- $brewRepository := $brewPrefix -}}
+{{- if ne $brewPrefix "/opt/homebrew" -}}
+{{-   $brewRepository = printf "%s/Homebrew" $brewPrefix -}}
+{{- end -}}
 ### brew ###
-eval "$({{ .brew.path  }} shellenv)"
+# `brew shellenv` の出力を chezmoi の展開時に焼き込んだもの。起動のたびに brew
+# (bash スクリプト) を fork せずに済む。macOS 14+ の shellenv は PATH の構築を
+# path_helper に投げるので、素直に eval すると 1 起動あたり 3 プロセス増える。
+#
+# 焼き込みに chezmoi の output 関数は使えない。shellenv は PATH の先頭が既に
+# brew の bin/sbin だと何も出力しない仕様なので、brew を通したシェルから apply
+# すると空文字列が焼き込まれ、エラーも出ないまま PATH が壊れる。
+#
+# brew を入れ替えて出力が変わったら、`env -i PATH=/usr/bin:/bin {{ .brew.path }} shellenv zsh`
+# (PATH を汚さない状態で叩く) と突き合わせて追随する。
+export HOMEBREW_PREFIX={{ $brewPrefix | quote }}
+export HOMEBREW_CELLAR={{ printf "%s/Cellar" $brewPrefix | quote }}
+export HOMEBREW_REPOSITORY={{ $brewRepository | quote }}
+export INFOPATH="{{ $brewPrefix }}/share/info:${INFOPATH:-}"
+# MANPATH は未設定なら触らない (先頭のコロンが system の man パスを意味するため)
+[[ -z ${MANPATH-} ]] || export MANPATH=":${MANPATH#:}"
+
+# shellenv は fpath の先頭に挿し、FPATH を export する
+fpath=(
+    {{ $brewPrefix }}/share/zsh/site-functions(N-/)
+    "$fpath[@]"
+)
+export FPATH
+
+# macOS 14+ の shellenv は path_helper 経由だが、PATH_HELPER_ROOT が効くと読むのは
+# $prefix/etc/paths (既定で bin と sbin) だけなので、結果はこの 2 つの前置と等しい
+path=(
+    {{ $brewPrefix }}/bin(N-/)
+    {{ $brewPrefix }}/sbin(N-/)
+    "$path[@]"
+)
 
 ### prompt (pure) ###
 # pure はデフォルトでプロンプトのたびに裏で git fetch する。非同期なので描画は

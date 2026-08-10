@@ -36,7 +36,7 @@ chezmoi data              # テンプレートで参照できる変数の一覧
    - `onepassword.yaml` — 1Password の SSH agent ソケットのパス。zshenv とチェックスクリプトの 2 箇所から参照されるので、値をここに寄せている
 2. `.chezmoi.toml.tmpl` が生成する `~/.config/chezmoi/chezmoi.toml` — prompt や OS 判定に依存して `.chezmoidata` に置けないもの:
    - `[data.brew.packages.cask] external` / `installExternal` — `chezmoi init` 時の `promptBoolOnce` で入れるか選ばせる。回答は `installExternal` として書き出され、次回以降の `chezmoi init` はそれを引き継ぐので再質問されない (質問し直したい場合は `chezmoi.toml` からこのキーを消す)
-   - `[data.brew] path` — OS/アーキテクチャごとの brew パス (`/opt/homebrew`, `/usr/local`, `/home/linuxbrew/.linuxbrew`)。`sync.zsh.tmpl` の `eval "$({{ .brew.path }} shellenv)"` などがこれを参照する
+   - `[data.brew] path` — OS/アーキテクチャごとの brew パス (`/opt/homebrew`, `/usr/local`, `/home/linuxbrew/.linuxbrew`)。`sync.zsh.tmpl` が `brew shellenv` 相当を焼き込むときの prefix (`dir` を 2 回) などがこれを参照する
 
 `.chezmoidata/` は chezmoi が毎回自動で読むので、1 を編集した場合は `chezmoi apply` するだけで反映される。
 
@@ -54,12 +54,22 @@ XDG 準拠のため `ZDOTDIR` を `~/.config/zsh` に寄せている。読み込
        └─ ~/.config/zsh/.zshrc    sync.zsh を source → sheldon で残りを非同期ロード
 ```
 
-- `sync.zsh.tmpl` — 起動時に同期実行が必要なもの (PATH 構築、brew shellenv、history、setopt)
+- `sync.zsh.tmpl` — 起動時に同期実行が必要なもの (PATH 構築、brew の環境変数、history、setopt)
 - `sheldon/plugins.toml` — プラグイン管理。`zsh-defer` を使った `defer` テンプレートで大半を遅延ロードする
 - `hooks/async.zsh.tmpl` — エイリアスと mise 有効化。sheldon の `[plugins.async]` から遅延 source される
 - `hooks/zeno-pre.zsh` / `zeno-post.zsh` — zeno の環境変数とキーバインド。プラグインの `hooks.pre` / `hooks.post` から呼ばれる
 
 zsh の状態ファイル (`HISTFILE` と `zcompdump`) は `$XDG_STATE_HOME/zsh/` にまとめる。**このディレクトリを作るのは `sync.zsh.tmpl` だけ**なので、`.zshrc` での `sync.zsh` → `sheldon source` の順序を崩さないこと。崩すと compinit が dump を黙って作らず毎回フルスキャンに戻る (エラーは出ない)。
+
+### 起動時の fork を増やさない
+
+対話シェルの起動は毎回走るので、`sync.zsh` と `.zshrc` では**外部コマンドを呼ばない**方針。起動時の fork は 2 つとも潰してある (#68)。
+
+- **brew** — `eval "$(brew shellenv)"` はやめ、展開結果を `sync.zsh.tmpl` に焼き込んでいる。macOS 14+ の `shellenv` は PATH 構築を `path_helper` に投げるので、eval すると brew (bash) + env + path_helper で 1 起動 3 プロセス増える。
+  - **焼き込みに chezmoi の `output` 関数は使えない。** `shellenv` は PATH の先頭が既に brew の `bin`/`sbin` だと何も出力しない (`Library/Homebrew/cmd/shellenv.sh` の冒頭)。brew を通したシェルから apply すると空文字列が焼き込まれ、エラーも出ないまま PATH が壊れる。
+  - brew 側の出力が変わったときは `env -i PATH=/usr/bin:/bin "$(command -v brew)" shellenv zsh` (PATH を汚さない状態で叩く) と突き合わせて追随する。
+- **sheldon** — `sheldon source` の出力を `$XDG_CACHE_HOME/sheldon/plugins.zsh` にキャッシュし、`plugins.toml` の方が新しいときだけ作り直す。生成に失敗したときは古いキャッシュを残す (壊れたキャッシュを source すると、プラグインが丸ごと消えた状態が次の `plugins.toml` 更新まで居座るため)。プラグインの実体を消したなど `plugins.toml` 以外の理由で作り直したいときはキャッシュファイルを消す。
+  - **このキャッシュを無名関数などに包まないこと。** `pure` のように defer せず直接 source されるプラグインの `typeset` が関数ローカルになり、グローバルに置いたつもりの変数が消える。
 
 配置先を変えるときは `run_once_after_0N_migrate_*.sh.tmpl` を 1 本足して既存環境のファイルを移す (irb / zsh 履歴の前例がある)。移行スクリプトは apply 時にまだ `~/.zshenv` が読まれていない前提で、`XDG_*` ではなく `.chezmoi.destDir` からパスを組み立てる。
 

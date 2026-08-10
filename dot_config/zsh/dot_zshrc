@@ -2,4 +2,29 @@
 # 順序を入れ替えると compinit が dump を黙って作らなくなる (毎回フルスキャンに戻る)。
 source $ZDOTDIR/sync.zsh
 
-eval "$(sheldon source)"
+# sheldon source の出力は plugins.toml に対して静的なので、起動のたびに sheldon を
+# fork せずキャッシュを source する。plugins.toml の方が新しければ作り直す
+# (chezmoi apply は内容が変わったときだけ書き出すので mtime で判定できる)。
+#
+# プラグインの実体を消した / lock を手で更新したなど toml 以外の理由で作り直したい
+# ときは、このキャッシュファイルを消せば次の起動で再生成される。
+#
+# キャッシュは無名関数などに包まないこと。中で source するプラグイン (pure など) の
+# typeset が関数ローカルになり、グローバルに置いたつもりの変数が消える。
+: "${XDG_CACHE_HOME:=$HOME/.cache}"
+__sheldon_cache="$XDG_CACHE_HOME/sheldon/plugins.zsh"
+
+if [[ ! -r $__sheldon_cache || $SHELDON_CONFIG_DIR/plugins.toml -nt $__sheldon_cache ]]; then
+    [[ -d $__sheldon_cache:h ]] || mkdir -p $__sheldon_cache:h
+    # 生成に失敗したキャッシュを source すると、プラグインが丸ごと消えた状態が
+    # 次の plugins.toml 更新まで居座る。書けたときだけ差し替える
+    if sheldon source >| $__sheldon_cache.new; then
+        mv -f $__sheldon_cache.new $__sheldon_cache
+    else
+        print -u2 "zshrc: sheldon source に失敗したためキャッシュを更新しない"
+        rm -f $__sheldon_cache.new
+    fi
+fi
+
+[[ -r $__sheldon_cache ]] && source $__sheldon_cache
+unset __sheldon_cache
