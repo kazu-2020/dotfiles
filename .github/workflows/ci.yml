@@ -46,6 +46,11 @@ jobs:
               --promptBool "Do you want to install external casks=$v" \
               --promptBool "Is this a work machine=$v" \
               < .chezmoi.toml.tmpl > "$tmpcfg/$v.toml"
+            # work は値がそのまま書き出されるので、両分岐をこのループ内で確認できる
+            grep -qE "^ *work = $v\$" "$tmpcfg/$v.toml" || {
+              echo "NG: work の promptBool=$v が展開結果に反映されていない (プロンプト文言の不一致?)" >&2
+              exit 1
+            }
           done
           grep -qF 'external = []' "$tmpcfg/false.toml" || {
             echo "NG: promptBool=false で external casks が空リストにならない" >&2
@@ -55,14 +60,6 @@ jobs:
             echo "NG: promptBool=true が展開結果に反映されていない (プロンプト文言の不一致?)" >&2
             exit 1
           fi
-          grep -qE '^ *work = false' "$tmpcfg/false.toml" || {
-            echo "NG: promptBool=false で work = false にならない" >&2
-            exit 1
-          }
-          grep -qE '^ *work = true' "$tmpcfg/true.toml" || {
-            echo "NG: work の promptBool が展開結果に反映されていない (プロンプト文言の不一致?)" >&2
-            exit 1
-          }
           echo "OK: .chezmoi.toml.tmpl (promptBool 両分岐)"
           chezmoi init --source "$GITHUB_WORKSPACE" \
             --promptBool "Do you want to install external casks=true" \

@@ -33,7 +33,7 @@ chezmoi data              # テンプレートで参照できる変数の一覧
 
 1. `.chezmoidata/` 以下のデータファイル (chezmoi が `.yaml` / `.yml` / `.json` / `.toml` をすべて読む)
    - `packages.yaml` — インストールするパッケージ一覧 (`brew.packages` の `common` / `mac` / `cask.common`)。**パッケージを追加する場合はここを編集する。**
-   - `onepassword.yaml` — 1Password の SSH agent ソケットのパス。zshenv とチェックスクリプトの 2 箇所から参照されるので、値をここに寄せている
+   - `onepassword.yaml` — 1Password の SSH agent ソケットのパスと、`onepasswordRead` に渡すアカウント。いずれも複数箇所から参照されるので、値をここに寄せている
 2. `.chezmoi.toml.tmpl` が生成する `~/.config/chezmoi/chezmoi.toml` — prompt や OS 判定に依存して `.chezmoidata` に置けないもの:
    - `[data.brew.packages.cask] external` / `installExternal` — `chezmoi init` 時の `promptBoolOnce` で入れるか選ばせる。回答は `installExternal` として書き出され、次回以降の `chezmoi init` はそれを引き継ぐので再質問されない (質問し直したい場合は `chezmoi.toml` からこのキーを消す)
    - `[data.brew] path` — OS/アーキテクチャごとの brew パス (`/opt/homebrew`, `/usr/local`, `/home/linuxbrew/.linuxbrew`)。`sync.zsh.tmpl` の `eval "$({{ .brew.path }} shellenv)"` などがこれを参照する
@@ -80,7 +80,7 @@ zsh の状態ファイル (`HISTFILE` と `zcompdump`) は `$XDG_STATE_HOME/zsh/
 - `$ZDOTDIR/.zshenv` からは `[[ -r $ZDOTDIR/work.zsh ]] && source` で読む。テンプレートで分岐しないのは、配置の有無で既に決まっているのと、組み込みの `[[ ]]` なら fork しないため
 - **`private_` 属性で 0600 に配置される。** 平文の秘密が載るので、644 で配置される `dot_zshenv.tmpl` 側には書かないこと
 - 秘密の値は `onepasswordRead` で apply 時に展開する。**このリポジトリは PUBLIC なので平文をソースに置かない。** 代償として apply に 1Password のロック解除が必要になる
-- `onepasswordRead` には**アカウントを明示する** (`onepasswordRead "op://..." "taciknowledge.1password.com"`)。`op` に複数アカウントが登録されているため、省略すると "multiple accounts found" で失敗する
+- `onepasswordRead` には**アカウントを明示する** (`onepasswordRead "op://..." .onepassword.account`)。`op` に複数アカウントが登録されているため、省略すると "multiple accounts found" で失敗する。値は `.chezmoidata/onepassword.yaml` が唯一の情報源なので、文字列を直書きしないこと
 - **`onepasswordRead` は必ず `lookPath "op"` でガードする。** CI は `.chezmoiignore` に関係なく全 `*.tmpl` を `execute-template` にかけるため、ガードが無いと `op` の無いランナーで落ちる
 
 ## 言語ランタイム (mise)

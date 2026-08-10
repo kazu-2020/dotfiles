@@ -1,21 +1,12 @@
 ### 仕事用の環境変数 ###
 #
-# 会社固有の設定はここに閉じる。個人マシンには配置されない ( .chezmoiignore が
-# .work で分岐する)。個人用の設定を混ぜないこと。
-#
-# このファイルは private_ 属性で 0600 に配置される。平文の秘密が載るため、
-# 644 で配置される dot_zshenv.tmpl 側には絶対に書かないこと。
+# 会社固有の設定はここに閉じ、個人用の設定を混ぜないこと。
+# 配置の仕組みと秘密の扱いは CLAUDE.md「仕事用の設定の分離」を参照。
 
 ### Takumi Guard (npm proxy: npm.flatt.tech) ###
 # npm を npmjs.org へ直接向けずプロキシ経由にするためのトークン。日常の npm は
 # ~/.config/npm/npmrc の _authToken を読むのでこの変数を使わないが、Dockerfile の
 # build arg など環境変数として要求する箇所があるため export しておく。
-#
-# 値は 1Password が唯一の情報源。このリポジトリは PUBLIC なので平文を置かない。
-# apply 時に展開されるので、apply には 1Password のロック解除が必要になる。
-#
-# lookPath "op" のガードは CI 用。CI は .chezmoiignore に関係なく全 *.tmpl を
-# execute-template にかけるため、op が無い環境では必ずスキップされる形にしておく。
 {{ if lookPath "op" -}}
-export TAKUMI_GUARD_TOKEN={{ onepasswordRead "op://Employee/Takumi Guard/credential" "taciknowledge.1password.com" | squote }}
+export TAKUMI_GUARD_TOKEN={{ onepasswordRead "op://Employee/Takumi Guard/credential" .onepassword.account | squote }}
 {{- end }}
