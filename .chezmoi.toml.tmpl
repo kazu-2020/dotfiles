@@ -3,9 +3,13 @@
 progress = true
 
 # NOTE: パッケージ一覧の本体は .chezmoidata/packages.yaml にある。
-# ここには promptBool の結果に依存して .chezmoidata に置けないものだけを残す。
+# ここには prompt の結果に依存して .chezmoidata に置けないものだけを残す。
+# installExternal は promptBoolOnce の参照先。この値を書き出しておくことで
+# chezmoi init を再実行しても前回の回答を引き継ぎ、再質問されない。
+{{- $installExternal := promptBoolOnce . "brew.packages.cask.installExternal" "Do you want to install external casks" }}
 [data.brew.packages.cask]
-  {{ if promptBool "Do you want to install external casks" -}}
+  installExternal = {{ $installExternal }}
+  {{ if $installExternal -}}
   external = [
     "alt-tab",
     "cleanshot",
