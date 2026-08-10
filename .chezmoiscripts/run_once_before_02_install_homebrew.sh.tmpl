@@ -24,6 +24,8 @@ done
 
 if [ -n "$MISSING_PACKAGES" ]; then
     echo "Installing missing packages: $MISSING_PACKAGES"
+    # 新規環境ではパッケージリストが空なので update してから install する
+    sudo apt-get update
     # パッケージ名のリストなので意図的に単語分割させる
     # shellcheck disable=SC2086
     sudo apt-get install -y $MISSING_PACKAGES
@@ -32,7 +34,8 @@ fi
 
 
 echo "Starting Homebrew installation..."
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+# run_once スクリプトは非対話で流れるので Enter 待ちを抑止する
+NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
 eval "$({{ .brew.path  }} shellenv)"
 

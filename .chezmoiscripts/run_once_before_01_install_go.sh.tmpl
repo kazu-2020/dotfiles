@@ -10,7 +10,12 @@ fi
 GO_URL="https://golang.org/dl/go${GO_VERSION}.{{.chezmoi.os}}-{{.chezmoi.arch}}.tar.gz"
 
 {{ if eq .chezmoi.os "linux" -}}
-sudo apt-get install -y curl
+if ! command -v curl >/dev/null 2>&1
+then
+  # 新規環境ではパッケージリストが空なので update してから install する
+  sudo apt-get update
+  sudo apt-get install -y curl
+fi
 {{ end }}
 
 curl -Lo /tmp/go.tar.gz $GO_URL || {
