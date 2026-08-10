@@ -28,6 +28,14 @@ path=(
 ### brew ###
 eval "$({{ .brew.path  }} shellenv)"
 
+### prompt (pure) ###
+# pure はデフォルトでプロンプトのたびに裏で git fetch する。非同期なので描画は
+# ブロックしないが、ネットワークアクセスと認証が回り続けるので切る。
+#
+# pure 本体は sheldon が defer せずに読む。この変数は precmd ごとに参照されるので
+# 最初のプロンプトまでに評価されていればよく、sheldon より前のここで設定する。
+export PURE_GIT_PULL=0
+
 ### history ###
 export HISTFILE="$XDG_STATE_HOME/zsh_history"
 # HISTSIZE < SAVEHIST だと古い履歴がメモリに載らず Ctrl-R で引けないので揃える

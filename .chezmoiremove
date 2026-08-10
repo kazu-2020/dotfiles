@@ -4,3 +4,6 @@
 .config/zsh/hooks/alias.zsh
 .config/zsh/hooks/other.zsh
 .config/zsh/hooks/path.zsh
+
+# プロンプトを starship から pure に置き換えたときの残骸。
+.config/starship.toml
