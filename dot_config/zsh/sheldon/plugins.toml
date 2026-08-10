@@ -32,7 +32,7 @@ github = "Aloxaf/fzf-tab"
 apply = ["defer"]
 
 [plugins.fast-syntax-highlighting]
-github = "zdharma/fast-syntax-highlighting"
+github = "zdharma-continuum/fast-syntax-highlighting"
 apply = ["defer"]
 
 [plugins.zsh-autosuggestions]
