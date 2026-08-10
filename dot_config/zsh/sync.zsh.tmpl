@@ -43,6 +43,30 @@ setopt hist_save_no_dups
 setopt hist_verify
 setopt inc_append_history_time
 
+# 失敗したコマンドを履歴ファイルに残さない。
+# zshaddhistory の時点では終了ステータスが分からないため、return 2 で
+# 内部履歴のみに保存してファイル書き込みを保留し、precmd で成功時だけ書き込む
+autoload -Uz add-zsh-hook
+
+__defer_hist_write() {
+    # 先頭スペースの行は hist_ignore_space に任せる
+    [[ $1 == \ * ]] && return 0
+    typeset -g __deferred_hist_line="${1%%$'\n'}"
+    return 2
+}
+
+__save_hist_if_ok() {
+    local last_status=$?
+    # ^C (130) や ^Z (148) による中断は失敗扱いにしない
+    if [[ -n $__deferred_hist_line ]] && (( last_status == 0 || last_status == 130 || last_status == 148 )); then
+        print -sr -- "$__deferred_hist_line"
+    fi
+    __deferred_hist_line=
+}
+
+add-zsh-hook zshaddhistory __defer_hist_write
+add-zsh-hook precmd __save_hist_if_ok
+
 # cd options
 setopt auto_cd
 setopt auto_pushd
