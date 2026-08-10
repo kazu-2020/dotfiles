@@ -17,7 +17,7 @@ REQUIRED_PACKAGES="build-essential procps curl file git"
 MISSING_PACKAGES=""
 
 for pkg in $REQUIRED_PACKAGES; do
-    if ! dpkg -l | grep -qw "$pkg"; then
+    if ! dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null | grep -q "ok installed"; then
         MISSING_PACKAGES="$MISSING_PACKAGES $pkg"
     fi
 done

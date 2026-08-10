@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## リポジトリの性質
 
-[chezmoi](https://www.chezmoi.io/) で管理する dotfiles のソースディレクトリ。ビルドは存在しないが、CI (`.github/workflows/ci.yml`) が macOS (arm64/amd64) と Ubuntu の各ランナーで全 `.tmpl` の `chezmoi execute-template` 検証・展開後スクリプトの shellcheck・`.chezmoidata` の YAML 構文チェックを行う。対象 OS は macOS (Intel / Apple Silicon) と Ubuntu で、OS 差分は Go テンプレートで吸収する。
+[chezmoi](https://www.chezmoi.io/) で管理する dotfiles のソースディレクトリ。ビルドは存在しないが、CI (`.github/workflows/ci.yml`) が macOS (arm64/amd64) と Ubuntu の各ランナーで全テンプレート (`*.tmpl` と `.chezmoiignore` / `.chezmoiremove`) の `chezmoi execute-template` 検証・展開後スクリプトの shellcheck・`.chezmoidata` のデータ構文チェックを行う。対象 OS は macOS (Intel / Apple Silicon) と Ubuntu で、OS 差分は Go テンプレートで吸収する。
 
 このディレクトリ自体が chezmoi のソースディレクトリ (`~/.local/share/chezmoi`) なので、ここでファイルを編集しても `chezmoi apply` するまでホームディレクトリには反映されない。
 
