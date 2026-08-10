@@ -1,4 +1,9 @@
 brew:
+  # 公式以外の tap。Homebrew 6.0 以降は brew trust での信頼登録が必要なため、
+  # run_once_after_02_execute_brew_bundle.sh.tmpl で trust してから tap する
+  taps:
+    mac:
+      - felixkratz/formulae
   packages:
     common:
       - chezmoi
