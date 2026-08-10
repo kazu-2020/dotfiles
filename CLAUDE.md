@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 [chezmoi](https://www.chezmoi.io/) で管理する dotfiles のソースディレクトリ。ビルドは存在しないが、CI (`.github/workflows/ci.yml`) が macOS (arm64/amd64) と Ubuntu の各ランナーで全テンプレート (`*.tmpl` と `.chezmoiignore` / `.chezmoiremove`) の `chezmoi execute-template` 検証・展開後スクリプトの shellcheck・`.chezmoidata` のデータ構文チェックに加え、使い捨ての一時ディレクトリへの `chezmoi apply` (`--exclude scripts`) まで行う。対象 OS は macOS (Intel / Apple Silicon) と Ubuntu で、OS 差分は Go テンプレートで吸収する。
 
-apply まで回すのは、属性プレフィックス (`create_` / `executable_`) の誤りや `.chezmoiignore` のパターンずれがテンプレート展開では捕まらないため。実体は `.github/scripts/verify-apply.sh` で、何をどういう理由で見ているかはそのスクリプトのコメントに書いてある。**引数なしで手元から実行できる** (配置先は毎回 `mktemp -d` なので `$HOME` には触らない) ので、CI が落ちたらまずこれを走らせる。
+apply まで回すのは、属性プレフィックス (`create_` / `executable_`) の誤りや `.chezmoiignore` のパターンずれがテンプレート展開では捕まらないため。実体は `.github/scripts/verify-apply.sh` で、何をどういう理由で見ているかはそのスクリプトのコメントに書いてある。**引数なしで手元から実行できる**ので、CI が落ちたらまずこれを走らせる。配置先だけでなく chezmoi.toml と永続ステートも使い捨ての一時ディレクトリに作る (`--config` / `--persistent-state`) ので、`$HOME` の状態には触らないし、`chezmoi init` していないクローンでも CI と同じ条件で回る。
+
+**`--destination` だけでは `$HOME` から切り離せない**点に注意。永続ステート (`~/.config/chezmoi/chezmoistate.boltdb`) の参照先は変わらないままなので、`--persistent-state` も一緒に渡す必要がある。
 
 ```sh
 .github/scripts/verify-apply.sh
