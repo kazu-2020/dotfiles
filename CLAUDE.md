@@ -108,7 +108,7 @@ Go / Node / Ruby / uv などのランタイムは mise に一本化しており�
 
 - インストール: `.chezmoidata/packages.yaml` の cask (`1password` / `1password-cli`) で入る
 - SSH agent: `dot_config/zsh/dot_zshenv.tmpl` で `SSH_AUTH_SOCK` を 1Password の agent.sock に向けている (darwin のみ)。ソケットのパスは `.chezmoidata/onepassword.yaml` が唯一の情報源で、zshenv と後述のチェックスクリプトの両方がここを参照する
-- コミット署名: `dot_config/git/config.tmpl` で `gpg.format = ssh` + `commit.gpgsign = true`。署名プログラムは `op` コマンドが存在する macOS でのみ `op-ssh-sign` を設定する条件付きブロックになっている (Linux では署名プログラム未設定)
+- コミット署名: `dot_config/git/config.tmpl` で `gpg.format = ssh` + `commit.gpgsign = true`。署名プログラム (`op-ssh-sign`) は macOS なら**無条件で**設定する (Linux では未設定)。`op-ssh-sign` は CLI ではなく 1Password.app の同梱物なので `lookPath "op"` で分岐しない。インストール済みかどうかも見ない — ファイルの配置は brew bundle (`run_once_after_02`) より前に走るため、初回 apply では必ず「未インストール」と判定され、`gpgsign = true` だけが効いた署名できない状態になるため。アプリが無いケースの案内は `run_after_06_check_1password_ssh_agent` が毎回の apply で出す
 
 **SSH agent の有効化そのものは自動化していない。** トグルの実体は 1Password の `settings.json` (`sshAgent.enabled`) だが、初回サインインを済ませるまでこのファイルが存在せず (サインインは GUI 必須)、アプリ起動中の書き換えはメモリ上の状態に上書きされ、かつ非公式フォーマットなのでキー名がアップデートで黙って変わりうる。
 
