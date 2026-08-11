@@ -36,7 +36,12 @@ ng() {
 # が引けず、アサーション以前にテンプレートエラーで落ちる)。execute-template ではなく
 # init を使うのは、こちらは config テンプレートのハッシュを永続ステートにも記録するため。
 # 記録が無いと以降の apply / status が「config が古い」と毎回警告する
-cm init --promptBool "Do you want to install external casks=true"
+#
+# work=true にするのは、仕事用の private_work.zsh.tmpl を実際に配置させて private_
+# 属性まで通すため。false にすると .chezmoiignore で除外され、この検証を素通りする
+# (その場合は後述の expected にも .config/zsh/work.zsh を足す必要がある)
+cm init --promptBool "Do you want to install external casks=true" \
+  --promptBool "Is this a work machine=true"
 
 # スクリプトは brew install などの副作用を伴うため配置対象から外す
 # (スクリプト本文の検証はワークフロー側の shellcheck が担当する)
