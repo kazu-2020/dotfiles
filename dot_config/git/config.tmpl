@@ -22,7 +22,15 @@
 [commit]
   gpgsign = true
 
-{{ if (and (lookPath "op") (eq .chezmoi.os "darwin")) }}
+{{ if eq .chezmoi.os "darwin" -}}
+{{/*
+  op-ssh-sign は 1Password.app の同梱物なので、CLI (op) の有無で分岐しない。
+  インストール状況も見ない: ファイルの配置は brew bundle (run_once_after_02) より
+  前に走るため、初回 apply では必ず「まだ入っていない」と判定されてしまい、
+  gpgsign = true だけが有効な状態 (= 署名できずコミットが失敗する) になる。
+  アプリが無ければどのみち署名できないし、その案内は
+  run_after_06_check_1password_ssh_agent が毎回の apply でやっている。
+*/ -}}
 [gpg "ssh"]
   program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
 {{ end }}
