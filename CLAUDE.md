@@ -4,7 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## リポジトリの性質
 
-[chezmoi](https://www.chezmoi.io/) で管理する dotfiles のソースディレクトリ。ビルドは存在しないが、CI (`.github/workflows/ci.yml`) が macOS (arm64/amd64) と Ubuntu の各ランナーで全テンプレート (`*.tmpl` と `.chezmoiignore` / `.chezmoiremove`) の `chezmoi execute-template` 検証・展開後スクリプトの shellcheck・`.chezmoidata` のデータ構文チェックを行う。対象 OS は macOS (Intel / Apple Silicon) と Ubuntu で、OS 差分は Go テンプレートで吸収する。
+[chezmoi](https://www.chezmoi.io/) で管理する dotfiles のソースディレクトリ。ビルドは存在しないが、CI (`.github/workflows/ci.yml`) が macOS (arm64/amd64) と Ubuntu の各ランナーで全テンプレート (`*.tmpl` と `.chezmoiignore` / `.chezmoiremove`) の `chezmoi execute-template` 検証・展開後スクリプトの shellcheck・`.chezmoidata` のデータ構文チェックに加え、使い捨ての一時ディレクトリへの `chezmoi apply` (`--exclude scripts`) まで行う。対象 OS は macOS (Intel / Apple Silicon) と Ubuntu で、OS 差分は Go テンプレートで吸収する。
+
+apply まで回すのは、属性プレフィックス (`create_` / `executable_`) の誤りや `.chezmoiignore` のパターンずれがテンプレート展開では捕まらないため。実体は `.github/scripts/verify-apply.sh` で、何をどういう理由で見ているかはそのスクリプトのコメントに書いてある。**引数なしで手元から実行できる**ので、CI が落ちたらまずこれを走らせる。配置先だけでなく chezmoi.toml と永続ステートも使い捨ての一時ディレクトリに作る (`--config` / `--persistent-state`) ので、`$HOME` の状態には触らないし、`chezmoi init` していないクローンでも CI と同じ条件で回る。
+
+**`--destination` だけでは `$HOME` から切り離せない**点に注意。永続ステート (`~/.config/chezmoi/chezmoistate.boltdb`) の参照先は変わらないままなので、`--persistent-state` も一緒に渡す必要がある。
+
+```sh
+.github/scripts/verify-apply.sh
+```
 
 このディレクトリ自体が chezmoi のソースディレクトリ (`~/.local/share/chezmoi`) なので、ここでファイルを編集しても `chezmoi apply` するまでホームディレクトリには反映されない。
 
@@ -122,13 +130,13 @@ Go / Node / Ruby / uv などのランタイムは mise に一本化しており�
 
 - インストール: `.chezmoidata/packages.yaml` の cask (`1password` / `1password-cli`) で入る
 - SSH agent: `dot_config/zsh/dot_zshenv.tmpl` で `SSH_AUTH_SOCK` を 1Password の agent.sock に向けている (darwin のみ)。ソケットのパスは `.chezmoidata/onepassword.yaml` が唯一の情報源で、zshenv と後述のチェックスクリプトの両方がここを参照する
-- コミット署名: `dot_config/git/config.tmpl` で `gpg.format = ssh` + `commit.gpgsign = true`。署名プログラムは `op` コマンドが存在する macOS でのみ `op-ssh-sign` を設定する条件付きブロックになっている (Linux では署名プログラム未設定)
+- コミット署名: `dot_config/git/config.tmpl` で `gpg.format = ssh` + `commit.gpgsign = true`。署名プログラム (`op-ssh-sign`) は macOS なら**無条件で**設定する (Linux では未設定)。`op-ssh-sign` は CLI ではなく 1Password.app の同梱物なので `lookPath "op"` で分岐しない。インストール済みかどうかも見ない — ファイルの配置は brew bundle (`run_once_after_02`) より前に走るため、初回 apply では必ず「未インストール」と判定され、`gpgsign = true` だけが効いた署名できない状態になるため。アプリが無いケースの案内は `run_after_06_check_1password_ssh_agent` が毎回の apply で出す
 
 **SSH agent の有効化そのものは自動化していない。** トグルの実体は 1Password の `settings.json` (`sshAgent.enabled`) だが、初回サインインを済ませるまでこのファイルが存在せず (サインインは GUI 必須)、アプリ起動中の書き換えはメモリ上の状態に上書きされ、かつ非公式フォーマットなのでキー名がアップデートで黙って変わりうる。
 
 代わりに `run_after_06_check_1password_ssh_agent.sh.tmpl` が apply のたびに agent.sock の有無を見て、無効なら有効化手順を stderr に出す。有効なら無音、どのケースでも `exit 0` で apply は止めない。`run_once_` にしないのは、初回 apply の時点ではまだサインインが済んでおらず、一度きりの警告だと有効化し忘れたまま気づけなくなるため。
 
-このスクリプトだけ **darwin 限定の方法が他と違う**。他のスクリプトはテンプレートの `{{ if eq .chezmoi.os "darwin" }}` で本文を空にしているが、これは毎回走る `run_after_` なので、それだと Linux で apply のたびに空のプロセスが起きる。代わりに `.chezmoiignore` でスクリプトごと除外している。**`.chezmoiignore` に書くパターンはソース名ではなく展開後のターゲット名** (`.chezmoiscripts/06_check_1password_ssh_agent.sh`) で、ソース名を書いても一致せず静かに無視される。効いているかは `chezmoi managed --include=scripts` で確認できる。
+このスクリプトだけ **darwin 限定の方法が他と違う**。他のスクリプトはテンプレートの `{{ if eq .chezmoi.os "darwin" }}` で本文を空にしているが、これは毎回走る `run_after_` なので、それだと Linux で apply のたびに空のプロセスが起きる。代わりに `.chezmoiignore` でスクリプトごと除外している。**`.chezmoiignore` に書くパターンはソース名ではなく展開後のターゲット名** (`.chezmoiscripts/06_check_1password_ssh_agent.sh`) で、ソース名を書いても一致せず静かに無視される。効いているかは `chezmoi managed --include=scripts` で確認できる。`chezmoi ignored` を使うともっと直接的で、**実在するエントリを実際に抑止したパターンしか出てこない**ので、ソース名で書いてしまったパターンは一覧から消える。CI (`.github/scripts/verify-apply.sh`) はこの性質を使って、OS ごとの ignored 一覧が想定と一致することをアサートしている。
 
 ## 変更時の注意
 

@@ -91,6 +91,15 @@ jobs:
           done
           shellcheck "$tmpdir"/*.sh
 
+      # 属性プレフィックスの誤りや .chezmoiignore のパターンずれはテンプレート展開では
+      # 捕まらないので、使い捨ての一時ディレクトリへ実際に apply して確かめる。中身を
+      # ワークフローに埋めず引数なしでも動くスクリプトにしてあるので、手元で同じものを
+      # 実行して落ちたステップを再現できる (ついでにここで自身も shellcheck にかける)
+      - name: Verify chezmoi apply
+        run: |
+          shellcheck .github/scripts/verify-apply.sh
+          .github/scripts/verify-apply.sh "$GITHUB_WORKSPACE"
+
   data-syntax:
     name: data syntax (.chezmoidata)
     runs-on: ubuntu-latest
