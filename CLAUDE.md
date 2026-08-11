@@ -24,8 +24,22 @@ chezmoi data              # テンプレートで参照できる変数の一覧
 - `dot_foo` → `~/.foo`、`dot_config/` → `~/.config/`
 - `executable_foo` → 実行ビットを立てて配置 (例: `dot_config/borders/executable_bordersrc`)
 - `*.tmpl` → Go テンプレートとして展開してから配置 (拡張子は落ちる)
-- `.chezmoiignore` / `.chezmoiremove` / `.chezmoi.toml.tmpl` / `.chezmoiscripts/` / `.chezmoidata/` は chezmoi 自身の設定で、ホームには配置されない
+- `.chezmoiignore` / `.chezmoiremove` / `.chezmoi.toml.tmpl` / `.chezmoiscripts/` / `.chezmoidata/` / `.chezmoiversion` は chezmoi 自身の設定で、ホームには配置されない
 - `.chezmoiremove` に書いたパスは `chezmoi apply` で**削除される**。ソースから消しただけでは配置済みファイルは残るため、その後始末に使う (全環境に行き渡ったらエントリごと消してよい)
+
+## chezmoi の最低バージョン (`.chezmoiversion`)
+
+要求する chezmoi の最低バージョンを `.chezmoiversion` で宣言している。これより古い chezmoi
+で apply すると、意味の分かりにくいテンプレートエラーではなく「バージョンが古い」という
+明確なエラーで止まる。
+
+現在の値は **2.34.2**。根拠は `.chezmoidata/` を**ディレクトリ**として使っている点で、
+ディレクトリ対応が 2.34.0、そこに複数ファイルを置けるようになったのが 2.34.2。
+`promptBoolOnce` (2.20.0) など他の依存はこれより古い。
+
+**このファイルはコメントを書けない。** chezmoi は中身全体を trim して semver として
+パースするので、`2.34.2` の 1 行だけを置くこと (先頭に `v` を付けるのも不可)。
+新しい機能に依存し始めたときは、ここの値を上げる根拠とあわせてこの節も更新する。
 
 ## テンプレートのデータソース
 
@@ -36,7 +50,7 @@ chezmoi data              # テンプレートで参照できる変数の一覧
    - `onepassword.yaml` — 1Password の SSH agent ソケットのパスと、`onepasswordRead` に渡すアカウント。いずれも複数箇所から参照されるので、値をここに寄せている
 2. `.chezmoi.toml.tmpl` が生成する `~/.config/chezmoi/chezmoi.toml` — prompt や OS 判定に依存して `.chezmoidata` に置けないもの:
    - `[data.brew.packages.cask] external` / `installExternal` — `chezmoi init` 時の `promptBoolOnce` で入れるか選ばせる。回答は `installExternal` として書き出され、次回以降の `chezmoi init` はそれを引き継ぐので再質問されない (質問し直したい場合は `chezmoi.toml` からこのキーを消す)
-   - `[data.brew] path` — OS/アーキテクチャごとの brew パス (`/opt/homebrew`, `/usr/local`, `/home/linuxbrew/.linuxbrew`)。`sync.zsh.tmpl` の `eval "$({{ .brew.path }} shellenv)"` などがこれを参照する
+   - `[data.brew] path` — OS/アーキテクチャごとの brew パス (`/opt/homebrew`, `/usr/local`, `/home/linuxbrew/.linuxbrew`)。`sync.zsh.tmpl` はここから prefix を導出して `brew shellenv` 相当を焼き込む
    - `[data] work` — 仕事マシンかどうか。同じく `promptBoolOnce` で聞いて書き出す。`.chezmoiignore` が仕事用設定の配置を分岐するのに使う (後述)
 
 **`promptBoolOnce` を追加・文言変更したら `.github/workflows/ci.yml` の `--promptBool` も直すこと。** CI には TTY が無いので、渡し忘れると `chezmoi init` がプロンプトで落ちる。加えて `--promptBool` は文言が一致しなくてもエラーにならず黙って false になるため、CI 側で両分岐の展開結果をアサートしている。
@@ -57,7 +71,7 @@ XDG 準拠のため `ZDOTDIR` を `~/.config/zsh` に寄せている。読み込
        └─ ~/.config/zsh/.zshrc    sync.zsh を source → sheldon で残りを非同期ロード
 ```
 
-- `sync.zsh.tmpl` — 起動時に同期実行が必要なもの (PATH 構築、brew shellenv、history、setopt)
+- `sync.zsh.tmpl` — 起動時に同期実行が必要なもの (PATH 構築、brew の環境変数、history、setopt)
 - `sheldon/plugins.toml` — プラグイン管理。`zsh-defer` を使った `defer` テンプレートで大半を遅延ロードする
 - `hooks/async.zsh.tmpl` — エイリアスと mise 有効化。sheldon の `[plugins.async]` から遅延 source される
 - `hooks/zeno-pre.zsh` / `zeno-post.zsh` — zeno の環境変数とキーバインド。プラグインの `hooks.pre` / `hooks.post` から呼ばれる
@@ -71,6 +85,17 @@ zsh の状態ファイル (`HISTFILE` と `zcompdump`) は `$XDG_STATE_HOME/zsh/
 `sheldon/plugins.toml` の `[templates] defer` 内の `{{ }}` は sheldon (Tera) のテンプレート構文であり、chezmoi のものではない。このファイルは `.tmpl` ではないので chezmoi は展開しないが、`.tmpl` 化する場合は `{{` のエスケープが必要になる。
 
 新しいシェル設定を追加する際は、遅延させてよいものは `hooks/async.zsh.tmpl` に、PATH や `setopt` など即時に必要なものは `sync.zsh.tmpl` に置く。
+
+### 起動時に外部コマンドを呼ばない
+
+`sync.zsh` と `.zshrc` は対話シェルの起動ごとに走るので、**ここに `eval "$(...)"` を足さない**。値が静的なら chezmoi の展開時に焼き込み、生成物ならキャッシュして source する (`brew shellenv` と `sheldon source` がそれぞれの前例)。制約は対話シェルの起動経路だけの話で、apply 時に一度動く `.chezmoiscripts/` が `eval "$(brew shellenv)"` を使うのは問題ない。
+
+焼き込みとキャッシュには、それぞれ黙って壊れる罠がある:
+
+- **焼き込みに chezmoi の `output` 関数は使えない。** `brew shellenv` は PATH の先頭が既に brew の `bin`/`sbin` だと何も出力しない (`Library/Homebrew/cmd/shellenv.sh` の冒頭)。brew を通したシェルから apply すると空文字列が焼き込まれ、エラーも出ないまま PATH が壊れる。brew 側の出力が変わったときは `env -i PATH=/usr/bin:/bin "$(command -v brew)" shellenv zsh` (PATH を汚さない状態で叩く) と突き合わせて追随する。
+- **キャッシュを無名関数などに包まないこと。** `pure` のように defer せず直接 source されるプラグインの `typeset` が関数ローカルになり、グローバルに置いたつもりの変数が消える。
+- **`sheldon source` の終了ステータスは信用できない。** 取得に失敗したプラグインを黙って落とした出力を吐いて exit 0 する (ERROR は stderr に出るだけ)。欠けた出力をそのまま焼くと mtime だけ新しくなり、次に `plugins.toml` を編集するまで直らない。`sheldon lock` は同じ状況で非 0 を返すのでゲートに使う。
+- **キャッシュは書けてから `mv` で差し替えること。** source されている当のファイルを直接 truncate すると、同時に起動した別のシェルが途中まで書かれたスクリプトを読む。書き損ねたキャッシュが mtime だけ新しくなるのも防げる。
 
 ### 仕事用の設定の分離
 
