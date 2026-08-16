@@ -55,10 +55,13 @@ chezmoi data              # テンプレートで参照できる変数の一覧
 
 1. `.chezmoidata/` 以下のデータファイル (chezmoi が `.yaml` / `.yml` / `.json` / `.toml` をすべて読む)
    - `packages.yaml` — インストールするパッケージ一覧 (`brew.packages` の `common` / `mac` / `cask.common`)。**パッケージを追加する場合はここを編集する。**
-   - `onepassword.yaml` — 1Password の SSH agent ソケットのパス。zshenv とチェックスクリプトの 2 箇所から参照されるので、値をここに寄せている
+   - `onepassword.yaml` — 1Password の SSH agent ソケットのパスと、`onepasswordRead` に渡すアカウント。いずれも複数箇所から参照されるので、値をここに寄せている
 2. `.chezmoi.toml.tmpl` が生成する `~/.config/chezmoi/chezmoi.toml` — prompt や OS 判定に依存して `.chezmoidata` に置けないもの:
    - `[data.brew.packages.cask] external` / `installExternal` — `chezmoi init` 時の `promptBoolOnce` で入れるか選ばせる。回答は `installExternal` として書き出され、次回以降の `chezmoi init` はそれを引き継ぐので再質問されない (質問し直したい場合は `chezmoi.toml` からこのキーを消す)
    - `[data.brew] path` — OS/アーキテクチャごとの brew パス (`/opt/homebrew`, `/usr/local`, `/home/linuxbrew/.linuxbrew`)。`sync.zsh.tmpl` はここから prefix を導出して `brew shellenv` 相当を焼き込む
+   - `[data] work` — 仕事マシンかどうか。同じく `promptBoolOnce` で聞いて書き出す。`.chezmoiignore` が仕事用設定の配置を分岐するのに使う (後述)
+
+**`promptBoolOnce` を追加・文言変更したら `.github/workflows/ci.yml` の `--promptBool` も直すこと。** CI には TTY が無いので、渡し忘れると `chezmoi init` がプロンプトで落ちる。加えて `--promptBool` は文言が一致しなくてもエラーにならず黙って false になるため、CI 側で両分岐の展開結果をアサートしている。
 
 `.chezmoidata/` は chezmoi が毎回自動で読むので、1 を編集した場合は `chezmoi apply` するだけで反映される。
 
@@ -101,6 +104,17 @@ zsh の状態ファイル (`HISTFILE` と `zcompdump`) は `$XDG_STATE_HOME/zsh/
 - **キャッシュを無名関数などに包まないこと。** `pure` のように defer せず直接 source されるプラグインの `typeset` が関数ローカルになり、グローバルに置いたつもりの変数が消える。
 - **`sheldon source` の終了ステータスは信用できない。** 取得に失敗したプラグインを黙って落とした出力を吐いて exit 0 する (ERROR は stderr に出るだけ)。欠けた出力をそのまま焼くと mtime だけ新しくなり、次に `plugins.toml` を編集するまで直らない。`sheldon lock` は同じ状況で非 0 を返すのでゲートに使う。
 - **キャッシュは書けてから `mv` で差し替えること。** source されている当のファイルを直接 truncate すると、同時に起動した別のシェルが途中まで書かれたスクリプトを読む。書き損ねたキャッシュが mtime だけ新しくなるのも防げる。
+
+### 仕事用の設定の分離
+
+会社固有の環境変数は `private_work.zsh.tmpl` (→ `~/.config/zsh/work.zsh`) に閉じ、個人用の設定と混ぜない。
+
+- 配置は `.chezmoiignore` が `.work` で分岐する。個人マシンにはファイル自体が置かれない
+- `$ZDOTDIR/.zshenv` からは `[[ -r $ZDOTDIR/work.zsh ]] && source` で読む。テンプレートで分岐しないのは、配置の有無で既に決まっているのと、組み込みの `[[ ]]` なら fork しないため
+- **`private_` 属性で 0600 に配置される。** 平文の秘密が載るので、644 で配置される `dot_zshenv.tmpl` 側には書かないこと
+- 秘密の値は `onepasswordRead` で apply 時に展開する。**このリポジトリは PUBLIC なので平文をソースに置かない。** 代償として apply に 1Password のロック解除が必要になる
+- `onepasswordRead` には**アカウントを明示する** (`onepasswordRead "op://..." .onepassword.account`)。`op` に複数アカウントが登録されているため、省略すると "multiple accounts found" で失敗する。値は `.chezmoidata/onepassword.yaml` が唯一の情報源なので、文字列を直書きしないこと
+- **`onepasswordRead` は必ず `lookPath "op"` でガードする。** CI は `.chezmoiignore` に関係なく全 `*.tmpl` を `execute-template` にかけるため、ガードが無いと `op` の無いランナーで落ちる
 
 ## 言語ランタイム (mise)
 

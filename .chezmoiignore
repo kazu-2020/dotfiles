@@ -7,3 +7,13 @@ CLAUDE.md
 {{ if ne .chezmoi.os "darwin" -}}
 .chezmoiscripts/06_check_1password_ssh_agent.sh
 {{ end -}}
+
+# 仕事用の環境変数は仕事マシンにだけ配置する。work は .chezmoi.toml.tmpl の
+# promptBoolOnce 由来なので、値を変えるには chezmoi init のやり直しが必要。
+#
+# `.work` を直接書かないのは、chezmoi が missingkey=error で評価するため。work を
+# 持たない古い chezmoi.toml では .chezmoiignore 自体が展開に失敗し apply が丸ごと
+# 止まる。dig なら既定値で受けられるので init 前でも動く
+{{ if not (dig "work" false .) -}}
+.config/zsh/work.zsh
+{{ end -}}

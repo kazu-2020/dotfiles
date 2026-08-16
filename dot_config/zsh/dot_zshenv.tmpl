@@ -52,3 +52,8 @@ export SSH_AUTH_SOCK={{ printf "%s/%s" .chezmoi.homeDir .onepassword.sshAgentSoc
 
 ### dotnet###
 export DOTNET_CLI_HOME="$XDG_DATA_HOME/dotnet"
+
+### 仕事用の設定 ###
+# work.zsh は仕事マシンにしか配置されないので、テンプレートで分岐せず存在で判定する
+# (組み込みの [[ ]] と source なので fork しない)。中身は private_work.zsh.tmpl 参照。
+[[ -r $ZDOTDIR/work.zsh ]] && source $ZDOTDIR/work.zsh

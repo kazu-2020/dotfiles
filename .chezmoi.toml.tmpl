@@ -7,6 +7,12 @@ progress = true
 # installExternal は promptBoolOnce の参照先。この値を書き出しておくことで
 # chezmoi init を再実行しても前回の回答を引き継ぎ、再質問されない。
 {{- $installExternal := promptBoolOnce . "brew.packages.cask.installExternal" "Do you want to install external casks" }}
+{{/* 仕事マシンかどうか。会社固有の設定 (dot_config/zsh/private_work.zsh.tmpl) を
+     配置するかの判定に使う。installExternal と同じく回答を書き出して引き継ぐ。
+     プロンプト文言を変えたら .github/workflows/ci.yml の --promptBool も直すこと */ -}}
+[data]
+  work = {{ promptBoolOnce . "work" "Is this a work machine" }}
+
 [data.brew.packages.cask]
   installExternal = {{ $installExternal }}
 {{- if $installExternal }}

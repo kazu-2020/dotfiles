@@ -1,0 +1,12 @@
+### 仕事用の環境変数 ###
+#
+# 会社固有の設定はここに閉じ、個人用の設定を混ぜないこと。
+# 配置の仕組みと秘密の扱いは CLAUDE.md「仕事用の設定の分離」を参照。
+
+### Takumi Guard (npm proxy: npm.flatt.tech) ###
+# npm を npmjs.org へ直接向けずプロキシ経由にするためのトークン。日常の npm は
+# ~/.config/npm/npmrc の _authToken を読むのでこの変数を使わないが、Dockerfile の
+# build arg など環境変数として要求する箇所があるため export しておく。
+{{ if lookPath "op" -}}
+export TAKUMI_GUARD_TOKEN={{ onepasswordRead "op://Employee/Takumi Guard/credential" .onepassword.account | squote }}
+{{- end }}
