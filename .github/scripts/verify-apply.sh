@@ -36,10 +36,6 @@ ng() {
 # が引けず、アサーション以前にテンプレートエラーで落ちる)。execute-template ではなく
 # init を使うのは、こちらは config テンプレートのハッシュを永続ステートにも記録するため。
 # 記録が無いと以降の apply / status が「config が古い」と毎回警告する
-#
-# work=true にするのは、仕事用の private_work.zsh.tmpl を実際に配置させて private_
-# 属性まで通すため。false にすると .chezmoiignore で除外され、この検証を素通りする
-# (その場合は後述の expected にも .config/zsh/work.zsh を足す必要がある)
 cm init --promptBool "Do you want to install external casks=true" \
   --promptBool "Is this a work machine=true"
 
@@ -47,6 +43,13 @@ cm init --promptBool "Do you want to install external casks=true" \
 # (スクリプト本文の検証はワークフロー側の shellcheck が担当する)
 cm apply --exclude scripts
 echo "OK: chezmoi apply"
+
+# work.zsh は平文の秘密を載せるので private_ で 0600 に置かれていなければならない
+if [ -n "$(find "$dest/.config/zsh/work.zsh" -perm 600 2>/dev/null)" ]; then
+  echo "OK: work.zsh が 0600"
+else
+  ng "work.zsh が 0600 で配置されていない"
+fi
 
 # 冪等性。apply 済みの配置先に対して status が何か報告するなら、展開結果が
 # 非決定的か、書けていないエントリがある
