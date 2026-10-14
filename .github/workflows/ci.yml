@@ -46,7 +46,6 @@ jobs:
               --promptBool "Do you want to install external casks=$v" \
               --promptBool "Is this a work machine=$v" \
               < .chezmoi.toml.tmpl > "$tmpcfg/$v.toml"
-            # work は値がそのまま書き出されるので、両分岐をこのループ内で確認できる
             grep -qE "^ *work = $v\$" "$tmpcfg/$v.toml" || {
               echo "NG: work の promptBool=$v が展開結果に反映されていない (プロンプト文言の不一致?)" >&2
               exit 1
