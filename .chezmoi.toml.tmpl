@@ -7,6 +7,9 @@ progress = true
 # installExternal は promptBoolOnce の参照先。この値を書き出しておくことで
 # chezmoi init を再実行しても前回の回答を引き継ぎ、再質問されない。
 {{- $installExternal := promptBoolOnce . "brew.packages.cask.installExternal" "Do you want to install external casks" }}
+[data]
+  work = {{ promptBoolOnce . "work" "Is this a work machine" }}
+
 [data.brew.packages.cask]
   installExternal = {{ $installExternal }}
 {{- if $installExternal }}

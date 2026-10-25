@@ -52,3 +52,5 @@ export SSH_AUTH_SOCK={{ printf "%s/%s" .chezmoi.homeDir .onepassword.sshAgentSoc
 
 ### dotnet###
 export DOTNET_CLI_HOME="$XDG_DATA_HOME/dotnet"
+
+[[ -r $ZDOTDIR/work.zsh ]] && source $ZDOTDIR/work.zsh
