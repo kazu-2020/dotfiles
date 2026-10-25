@@ -52,3 +52,10 @@ export SSH_AUTH_SOCK={{ printf "%s/%s" .chezmoi.homeDir .onepassword.sshAgentSoc
 
 ### dotnet###
 export DOTNET_CLI_HOME="$XDG_DATA_HOME/dotnet"
+
+### TLS ###
+{{- $caBundle := printf "%s/etc/ca-certificates/cert.pem" (.brew.path | dir | dir) }}
+if [[ -r {{ $caBundle }} ]]; then
+    export SSL_CERT_FILE={{ $caBundle }}
+    export GIT_SSL_CAINFO=$SSL_CERT_FILE
+fi
