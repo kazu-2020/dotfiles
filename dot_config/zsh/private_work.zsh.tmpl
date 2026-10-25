@@ -1,0 +1,9 @@
+{{/* empty_ を付けないのは、work=false で空になったときに置き済みのファイルを chezmoi に
+     消させるため。.chezmoiignore で外すと .chezmoiremove に書いても消えない */ -}}
+{{ if dig "work" false . -}}
+{{   if lookPath "op" -}}
+export TAKUMI_GUARD_TOKEN={{ onepasswordRead "op://Employee/Takumi Guard/credential" .onepassword.account | squote }}
+{{   else -}}
+# op が無かったので秘密を展開していない。1Password CLI を入れてから apply し直すこと
+{{   end -}}
+{{ end -}}

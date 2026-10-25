@@ -59,3 +59,5 @@ if [[ -r {{ $caBundle }} ]]; then
     export SSL_CERT_FILE={{ $caBundle }}
     export GIT_SSL_CAINFO=$SSL_CERT_FILE
 fi
+
+[[ -r $ZDOTDIR/work.zsh ]] && source $ZDOTDIR/work.zsh

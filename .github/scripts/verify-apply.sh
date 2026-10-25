@@ -36,12 +36,19 @@ ng() {
 # が引けず、アサーション以前にテンプレートエラーで落ちる)。execute-template ではなく
 # init を使うのは、こちらは config テンプレートのハッシュを永続ステートにも記録するため。
 # 記録が無いと以降の apply / status が「config が古い」と毎回警告する
-cm init --promptBool "Do you want to install external casks=true"
+cm init --promptBool "Do you want to install external casks=true" \
+  --promptBool "Is this a work machine=true"
 
 # スクリプトは brew install などの副作用を伴うため配置対象から外す
 # (スクリプト本文の検証はワークフロー側の shellcheck が担当する)
 cm apply --exclude scripts
 echo "OK: chezmoi apply"
+
+if [ -n "$(find "$dest/.config/zsh/work.zsh" -perm 600 2>/dev/null)" ]; then
+  echo "OK: work.zsh が 0600"
+else
+  ng "work.zsh が 0600 で配置されていない"
+fi
 
 # 冪等性。apply 済みの配置先に対して status が何か報告するなら、展開結果が
 # 非決定的か、書けていないエントリがある
@@ -124,6 +131,18 @@ if [ "${#scripts[@]}" -eq 0 ]; then
 else
   printf 'shellcheck: %s\n' "${scripts[@]}"
   shellcheck "${scripts[@]}" || rc=1
+fi
+
+# work=false に切り替えた環境では、置き済みの work.zsh が消えること。
+# promptBoolOnce は既存の config の値を再利用するので、config を消してから init し直す
+rm "$work/chezmoi.toml"
+cm init --promptBool "Do you want to install external casks=true" \
+  --promptBool "Is this a work machine=false"
+cm apply --exclude scripts
+if [ -e "$dest/.config/zsh/work.zsh" ]; then
+  ng "work=false で apply しても work.zsh が残る"
+else
+  echo "OK: work=false で work.zsh が消える"
 fi
 
 exit "$rc"
