@@ -7,7 +7,4 @@ set -eu
 # (--destination で試し適用したときに実ホームを触らないようにするため)。
 dest={{ .chezmoi.destDir | squote }}
 
-mkdir -p "$dest/.config"
-mkdir -p "$dest/.local/share"
-mkdir -p "$dest/.local/state"
-mkdir -p "$dest/.cache"
+mkdir -p "$dest/.config" "$dest/.local/share" "$dest/.local/state" "$dest/.cache"

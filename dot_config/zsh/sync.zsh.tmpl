@@ -22,7 +22,7 @@ path=(
 __emulate_path_helper() {
     local f
     for f in /etc/paths(N) /etc/paths.d/*(N); do
-        path+=(${(f)"$(<$f)"})
+        path+=(${^${(f)"$(<$f)"}}(N-/))
     done
 }
 __emulate_path_helper
@@ -33,7 +33,7 @@ path=(
     "$XDG_DATA_HOME/mise/shims"(N-/)
     "$GOBIN"(N-/)
     "$XDG_DATA_HOME/cargo/bin"(N-/)
-    "$DENO_INSTALL_ROOT/bin"(N-/)
+    "${DENO_INSTALL_ROOT:+$DENO_INSTALL_ROOT/bin}"(N-/)
     "$HOME/bin"(N-/)
     "$path[@]"
 )
