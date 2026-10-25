@@ -28,7 +28,7 @@ Linux では SSH agent もコミット署名プログラムも設定されない
 ### 2. 環境構築
 
 ```sh
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply kazu-2020
+sh -c "$(curl -fsLS --proto '=https' --tlsv1.2 https://get.chezmoi.io)" -- init --apply kazu-2020
 ```
 
 初回の `chezmoi init` で次の 2 つを聞かれる。
