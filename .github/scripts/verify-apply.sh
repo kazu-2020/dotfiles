@@ -89,7 +89,7 @@ while IFS= read -r -d '' f; do
   [ -x "$f" ] ||
     ng "shebang 付きだが実行ビットが無い: ${f#"$dest"/} (executable_ の付け忘れ?)"
 
-  # shellcheck が読めるのは sh / bash / dash / ksh / busybox sh だけで、他は SC1071 になる
+  # sh / bash / dash / ksh / busybox sh 以外は shellcheck が読めず SC1071 になる
   case "$(interpreter "$shebang")" in
     sh | bash | dash | ksh | busybox) scripts+=("$f") ;;
   esac
