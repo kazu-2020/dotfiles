@@ -34,6 +34,10 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install shellcheck
 
+      - name: Install zsh (Linux)
+        if: runner.os == 'Linux'
+        run: command -v zsh || { sudo apt-get update && sudo apt-get install -y zsh; }
+
       # .chezmoi.toml.tmpl を promptBool の両分岐で展開し、分岐が展開結果に反映されて
       # いることをアサートする (--promptBool はプロンプト文言が一致しないとエラーに
       # ならず黙って false になるため、展開が成功するだけでは検証にならない)。

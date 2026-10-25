@@ -7,7 +7,7 @@ set -eu
 # 環境変数に頼らず、chezmoi が知っている適用先からパスを組み立てる。
 dest={{ .chezmoi.destDir | squote }}
 
-state="${XDG_STATE_HOME:-$dest/.local/state}"
+state="$dest/.local/state"
 old="$state/.irb_history"
 new="$state/irb/history"
 

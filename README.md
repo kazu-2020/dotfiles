@@ -31,9 +31,13 @@ Linux では SSH agent もコミット署名プログラムも設定されない
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply kazu-2020
 ```
 
-初回の `chezmoi init` で「external な cask を入れるか」を聞かれる。
+初回の `chezmoi init` で次の 2 つを聞かれる。
+
+- external な cask を入れるか (`installExternal`)
+- 仕事用のマシンか (`work`)。yes なら仕事用の環境変数を `~/.config/zsh/work.zsh` に置く (1Password のロック解除が必要)
+
 回答は `~/.config/chezmoi/chezmoi.toml` に記録されるので、次回以降は聞かれない
-(聞き直したい場合は `chezmoi.toml` の `installExternal` を消してから `chezmoi init` する)。
+(聞き直したい場合は `chezmoi.toml` から該当キーを消してから `chezmoi init` する)。
 
 ## apply で何が起きるか
 
@@ -48,6 +52,7 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply kazu-2020
 | `after_04_install_mise_tools` | `~/.config/mise/config.toml` のランタイムを `mise install` |
 | `after_05_set_login_shell` | ログインシェルを zsh にする (Ubuntu では zsh のインストールも) |
 | `after_06_check_1password_ssh_agent` | 1Password の SSH agent が無効なら有効化手順を出す (macOS のみ) |
+| `after_07_migrate_zsh_history` | zsh の履歴ファイルを新しいパスへ移す (旧環境からの移行用) |
 
 ログインシェルの変更は `sudo` を使う。`sudo` が使えない環境では apply を止めずに案内だけ出すので、
 その場合は手動で実行する。反映は次回ログインから。
@@ -65,7 +70,7 @@ chsh -s "$(command -v zsh)"
 | `.chezmoi.toml.tmpl` | prompt の結果や OS 判定に依存する設定 (brew のパスなど) |
 | `.chezmoiscripts/` | apply 時に走るスクリプト |
 | `dot_config/zsh/` | zsh 設定。`ZDOTDIR` を `~/.config/zsh` に寄せ、sheldon で非同期ロード |
-| `dot_config/mise/config.toml` | 言語ランタイム (Go / Node / Ruby / uv) のバージョン。唯一の情報源 |
+| `dot_config/mise/config.toml` | 言語ランタイムと CLI (Go / Node / Ruby / uv / gh / terraform / fzf など) のバージョン。唯一の情報源 |
 | `dot_config/git/`, `nvim/`, `eza/`, ... | 各ツールの設定 |
 
 ファイル名のプレフィックスが配置先とパーミッションを決める chezmoi の規約に従う
@@ -95,4 +100,6 @@ chezmoi state delete-bucket --bucket=scriptState
 
 `.github/workflows/ci.yml` が macOS (arm64 / amd64) と Ubuntu の実ランナー上で、
 全テンプレートの `chezmoi execute-template` 検証・展開後スクリプトの shellcheck・
-`.chezmoidata` の構文チェックを行う。
+`.chezmoidata` の構文チェックに加え、使い捨ての一時ディレクトリへの `chezmoi apply` と
+配置結果の検査 (パーミッション・冪等性・zsh 設定の構文など) を行う。
+apply 検査は `.github/scripts/verify-apply.sh` を引数なしで実行すれば手元でも回せる。
