@@ -1,3 +1,0 @@
-{{ if lookPath "op" -}}
-export TAKUMI_GUARD_TOKEN={{ onepasswordRead "op://Employee/Takumi Guard/credential" .onepassword.account | squote }}
-{{- end }}

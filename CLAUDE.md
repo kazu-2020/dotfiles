@@ -59,7 +59,7 @@ chezmoi data              # テンプレートで参照できる変数の一覧
 2. `.chezmoi.toml.tmpl` が生成する `~/.config/chezmoi/chezmoi.toml` — prompt や OS 判定に依存して `.chezmoidata` に置けないもの:
    - `[data.brew.packages.cask] external` / `installExternal` — `chezmoi init` 時の `promptBoolOnce` で入れるか選ばせる。回答は `installExternal` として書き出され、次回以降の `chezmoi init` はそれを引き継ぐので再質問されない (質問し直したい場合は `chezmoi.toml` からこのキーを消す)
    - `[data.brew] path` — OS/アーキテクチャごとの brew パス (`/opt/homebrew`, `/usr/local`, `/home/linuxbrew/.linuxbrew`)。`sync.zsh.tmpl` はここから prefix を導出して `brew shellenv` 相当を焼き込む
-   - `[data] work` — 仕事マシンかどうか。同じく `promptBoolOnce` で聞いて書き出す。`.chezmoiignore` が仕事用設定の配置を分岐するのに使う (後述)
+   - `[data] work` — 仕事マシンかどうか。同じく `promptBoolOnce` で聞いて書き出す。`private_work.zsh.tmpl` が仕事用設定を置くかどうかの分岐に使う (後述)
 
 **`promptBoolOnce` を追加・文言変更したら `.github/workflows/ci.yml` の `--promptBool` も直すこと。** CI には TTY が無いので、渡し忘れると `chezmoi init` がプロンプトで落ちる。加えて `--promptBool` は文言が一致しなくてもエラーにならず黙って false になるため、CI 側で両分岐の展開結果をアサートしている。
 
@@ -107,15 +107,15 @@ zsh の状態ファイル (`HISTFILE` と `zcompdump`) は `$XDG_STATE_HOME/zsh/
 
 ### 仕事用の設定の分離
 
-会社固有の環境変数は `private_empty_work.zsh.tmpl` (配置先は `~/.config/zsh/work.zsh`) に閉じ、個人用の設定と混ぜない。
+会社固有の環境変数は `private_work.zsh.tmpl` (配置先は `~/.config/zsh/work.zsh`) に閉じ、個人用の設定と混ぜない。
 
-- 配置は `.chezmoiignore` が `.work` で分岐する。個人マシンにはファイル自体が置かれない
-- `$ZDOTDIR/.zshenv` からは `[[ -r $ZDOTDIR/work.zsh ]] && source` で読む。テンプレートでは分岐しない。置くかどうかは `.chezmoiignore` が決めており、組み込みの `[[ ]]` は fork もしない
-- **`empty_` 属性は外さないこと。** `op` が無い環境 (CI を含む) では中身が空になり、`empty_` が無いと chezmoi はファイルを作らない。`verify-apply.sh` の 0600 アサートがそれで落ちる
+- テンプレート自身が `dig "work" false .` で分岐し、work=false では中身が空になる。`empty_` 属性を付けていないので、chezmoi は空になったファイルを置かず、置き済みなら消す。仕事マシンから個人マシンに切り替えたときに、秘密入りの `work.zsh` を残さないため
+- `$ZDOTDIR/.zshenv` からは `[[ -r $ZDOTDIR/work.zsh ]] && source` で読む。zshenv 側のテンプレートでは分岐しない。置くかどうかは `private_work.zsh.tmpl` が決めており、組み込みの `[[ ]]` は fork もしない
+- **`.chezmoiignore` で外す形に戻さないこと。** chezmoi は `.chezmoiignore` で無視したパスを、`.chezmoiremove` に書いても消さない。work=false に切り替えても秘密入りのファイルが残る
 - **秘密は `dot_zshenv.tmpl` に書かないこと。** chezmoi は `private_` 属性の `work.zsh` を 0600 で置くが、`dot_zshenv.tmpl` は 644 で置く
 - 秘密の値は `onepasswordRead` で apply 時に展開する。このリポジトリは PUBLIC なので、平文をソースに置かない。代償として apply に 1Password のロック解除が必要になる
 - `onepasswordRead` にはアカウントを明示する (`onepasswordRead "op://..." .onepassword.account`)。`op` に複数アカウントが登録されているため、省略すると "multiple accounts found" で失敗する。値は `.chezmoidata/onepassword.yaml` が唯一の情報源なので、文字列を直書きしないこと
-- **`onepasswordRead` は必ず `lookPath "op"` でガードする。** CI は `.chezmoiignore` に関係なく全 `*.tmpl` を `execute-template` にかけるため、ガードが無いと `op` の無いランナーで落ちる
+- **`onepasswordRead` は必ず `lookPath "op"` でガードする。** CI は全 `*.tmpl` を `execute-template` にかけるため、ガードが無いと `op` の無いランナーで落ちる。`op` が無いときは空ではなくコメント 1 行を出す。空にすると work=true でもファイルが消え、`verify-apply.sh` の 0600 アサートが落ちる
 
 ## 言語ランタイム (mise)
 

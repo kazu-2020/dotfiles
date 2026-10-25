@@ -133,4 +133,16 @@ else
   shellcheck "${scripts[@]}" || rc=1
 fi
 
+# work=false に切り替えた環境では、置き済みの work.zsh が消えること。
+# promptBoolOnce は既存の config の値を再利用するので、config を消してから init し直す
+rm "$work/chezmoi.toml"
+cm init --promptBool "Do you want to install external casks=true" \
+  --promptBool "Is this a work machine=false"
+cm apply --exclude scripts
+if [ -e "$dest/.config/zsh/work.zsh" ]; then
+  ng "work=false で apply しても work.zsh が残る"
+else
+  echo "OK: work=false で work.zsh が消える"
+fi
+
 exit "$rc"
