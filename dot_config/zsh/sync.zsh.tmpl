@@ -63,8 +63,6 @@ path=(
     "$path[@]"
 )
 
-# eMudhra 対応: 証明書の束を Homebrew の ca-certificates に揃える。
-# 存在しないパスを指すと TLS が全部落ちるので、ファイルがあるときだけ設定する
 if [[ -r {{ $brewPrefix }}/etc/ca-certificates/cert.pem ]]; then
     export SSL_CERT_FILE={{ $brewPrefix }}/etc/ca-certificates/cert.pem
     export GIT_SSL_CAINFO=$SSL_CERT_FILE
