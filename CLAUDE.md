@@ -90,6 +90,8 @@ zsh の状態ファイル (`HISTFILE` と `zcompdump`) は `$XDG_STATE_HOME/zsh/
 
 **TAB (`^i`) の補完 UI は fzf-tab に寄せる方針**。zeno は `config.yml` の `snippets:` を使うスニペット展開と履歴選択・ghq cd に限定して使い、`zeno-completion` は bind しない。両方を bind すると `zsh-defer` の FIFO 実行で後から読まれた方が勝つため、読み込み順に依存した壊れ方をする。
 
+**`sync.zsh.tmpl` 末尾の `bindkey -e` は遅延ロード側に移さないこと。** `bindkey -e` は main キーマップを emacs に切り替えるので、それより前に main へ入れた bind は消える。zeno (`hooks/zeno-post.zsh`) や fzf-tab の bind は `zsh-defer` でこれより後に走るので消えない。`async.zsh.tmpl` などに移すと順序が逆転し、`^r` や Space の zeno バインドがエラーも出さずに効かなくなる。
+
 `sheldon/plugins.toml` の `[templates] defer` 内の `{{ }}` は sheldon (Tera) のテンプレート構文であり、chezmoi のものではない。このファイルは `.tmpl` ではないので chezmoi は展開しないが、`.tmpl` 化する場合は `{{` のエスケープが必要になる。
 
 新しいシェル設定を追加する際は、遅延させてよいものは `hooks/async.zsh.tmpl` に、PATH や `setopt` など即時に必要なものは `sync.zsh.tmpl` に置く。
