@@ -133,6 +133,20 @@ else
   shellcheck "${scripts[@]}" || rc=1
 fi
 
+if command -v zsh >/dev/null 2>&1; then
+  for f in "$dest"/.zshenv "$dest"/.config/zsh/.zshenv "$dest"/.config/zsh/.zshrc \
+    "$dest"/.config/zsh/*.zsh "$dest"/.config/zsh/hooks/*.zsh; do
+    if [ ! -f "$f" ]; then
+      ng "zsh 設定が配置されていない: ${f#"$dest"/}"
+      continue
+    fi
+    zsh -n "$f" || ng "zsh の構文エラー: ${f#"$dest"/}"
+  done
+  echo "OK: zsh -n"
+else
+  ng "zsh が無いので zsh 設定の構文チェックができない"
+fi
+
 # work=false に切り替えた環境では、置き済みの work.zsh が消えること。
 # promptBoolOnce は既存の config の値を再利用するので、config を消してから init し直す
 rm "$work/chezmoi.toml"

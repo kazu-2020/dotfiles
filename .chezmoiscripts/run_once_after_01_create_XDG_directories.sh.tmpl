@@ -7,7 +7,7 @@ set -eu
 # (--destination で試し適用したときに実ホームを触らないようにするため)。
 dest={{ .chezmoi.destDir | squote }}
 
-mkdir -p "${XDG_CONFIG_HOME:-$dest/.config}"
-mkdir -p "${XDG_DATA_HOME:-$dest/.local/share}"
-mkdir -p "${XDG_STATE_HOME:-$dest/.local/state}"
-mkdir -p "${XDG_CACHE_HOME:-$dest/.cache}"
+mkdir -p "$dest/.config"
+mkdir -p "$dest/.local/share"
+mkdir -p "$dest/.local/state"
+mkdir -p "$dest/.cache"
