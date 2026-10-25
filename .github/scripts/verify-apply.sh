@@ -44,7 +44,6 @@ cm init --promptBool "Do you want to install external casks=true" \
 cm apply --exclude scripts
 echo "OK: chezmoi apply"
 
-# work.zsh は平文の秘密を載せるので private_ で 0600 に置かれていなければならない
 if [ -n "$(find "$dest/.config/zsh/work.zsh" -perm 600 2>/dev/null)" ]; then
   echo "OK: work.zsh が 0600"
 else
