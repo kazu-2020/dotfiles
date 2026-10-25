@@ -129,3 +129,8 @@ setopt auto_remove_slash
 setopt mark_dirs
 setopt print_eight_bit
 setopt no_flow_control
+
+# bindkey -e も -v も無いと、zsh は $EDITOR が *vi* に一致するかで main キーマップを決める。
+# EDITOR=nvim だと viins になり ^A / ^E / ^K が効かないので明示する。bindkey -e は main を
+# 貼り替えて先行の bindkey を消すが、プラグインの bindkey は zsh-defer でこれより後に走る
+bindkey -e
