@@ -107,14 +107,14 @@ zsh の状態ファイル (`HISTFILE` と `zcompdump`) は `$XDG_STATE_HOME/zsh/
 
 ### 仕事用の設定の分離
 
-会社固有の環境変数は `private_empty_work.zsh.tmpl` (→ `~/.config/zsh/work.zsh`) に閉じ、個人用の設定と混ぜない。
+会社固有の環境変数は `private_empty_work.zsh.tmpl` (配置先は `~/.config/zsh/work.zsh`) に閉じ、個人用の設定と混ぜない。
 
 - 配置は `.chezmoiignore` が `.work` で分岐する。個人マシンにはファイル自体が置かれない
-- `$ZDOTDIR/.zshenv` からは `[[ -r $ZDOTDIR/work.zsh ]] && source` で読む。テンプレートで分岐しないのは、配置の有無で既に決まっているのと、組み込みの `[[ ]]` なら fork しないため
+- `$ZDOTDIR/.zshenv` からは `[[ -r $ZDOTDIR/work.zsh ]] && source` で読む。テンプレートでは分岐しない。置くかどうかは `.chezmoiignore` が決めており、組み込みの `[[ ]]` は fork もしない
 - **`empty_` 属性は外さないこと。** `op` が無い環境 (CI を含む) では中身が空になり、`empty_` が無いと chezmoi はファイルを作らない。`verify-apply.sh` の 0600 アサートがそれで落ちる
-- **`private_` 属性で 0600 に配置される。** 平文の秘密が載るので、644 で配置される `dot_zshenv.tmpl` 側には書かないこと
-- 秘密の値は `onepasswordRead` で apply 時に展開する。**このリポジトリは PUBLIC なので平文をソースに置かない。** 代償として apply に 1Password のロック解除が必要になる
-- `onepasswordRead` には**アカウントを明示する** (`onepasswordRead "op://..." .onepassword.account`)。`op` に複数アカウントが登録されているため、省略すると "multiple accounts found" で失敗する。値は `.chezmoidata/onepassword.yaml` が唯一の情報源なので、文字列を直書きしないこと
+- **秘密は `dot_zshenv.tmpl` に書かないこと。** chezmoi は `private_` 属性の `work.zsh` を 0600 で置くが、`dot_zshenv.tmpl` は 644 で置く
+- 秘密の値は `onepasswordRead` で apply 時に展開する。このリポジトリは PUBLIC なので、平文をソースに置かない。代償として apply に 1Password のロック解除が必要になる
+- `onepasswordRead` にはアカウントを明示する (`onepasswordRead "op://..." .onepassword.account`)。`op` に複数アカウントが登録されているため、省略すると "multiple accounts found" で失敗する。値は `.chezmoidata/onepassword.yaml` が唯一の情報源なので、文字列を直書きしないこと
 - **`onepasswordRead` は必ず `lookPath "op"` でガードする。** CI は `.chezmoiignore` に関係なく全 `*.tmpl` を `execute-template` にかけるため、ガードが無いと `op` の無いランナーで落ちる
 
 ## 言語ランタイム (mise)

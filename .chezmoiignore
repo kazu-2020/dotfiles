@@ -10,7 +10,7 @@ CLAUDE.md
 
 # `.work` を直接書かないのは、chezmoi が missingkey=error で評価するため。work を
 # 持たない古い chezmoi.toml では .chezmoiignore 自体が展開に失敗し apply が丸ごと
-# 止まる。dig なら既定値で受けられるので init 前でも動く
+# 止まる。dig は既定値を返すので、init を再実行していない環境でも展開できる
 {{ if not (dig "work" false .) -}}
 .config/zsh/work.zsh
 {{ end -}}
