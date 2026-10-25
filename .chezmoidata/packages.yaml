@@ -12,7 +12,6 @@ brew:
       - mise
       - bat
       - fd
-      - fzf
       - git
       - ghq
       - neovim
