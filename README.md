@@ -86,7 +86,7 @@ chezmoi execute-template < dot_config/zsh/sync.zsh.tmpl   # テンプレート�
 chezmoi data                 # テンプレートで参照できる変数の一覧
 ```
 
-`run_once_` のスクリプトは内容を変えない限り再実行されない。強制的に走らせたい場合:
+`run_once_` のスクリプトは内容を変えない限り再実行されない。強制的に走らせるには、次を実行する。
 
 ```sh
 chezmoi state delete-bucket --bucket=scriptState
