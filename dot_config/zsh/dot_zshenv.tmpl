@@ -2,46 +2,36 @@ unsetopt GLOBAL_RCS
 
 export EDITOR="nvim"
 
-### Ruby ###
 export IRBRC="$XDG_CONFIG_HOME/irb/irbrc"
 
 export BUNDLE_USER_HOME="$XDG_CONFIG_HOME/bundle"
 export BUNDLE_USER_CACHE="$XDG_CACHE_HOME/bundle"
 export BUNDLE_USER_PLUGIN="$XDG_DATA_HOME/bundle/plugin"
 
-### Rust ###
 export CARGO_HOME="$XDG_DATA_HOME/cargo"
 export RUSTUP_HOME="$XDG_DATA_HOME/rustup"
 
-### Go ###
 export GOPATH="$XDG_DATA_HOME/go"
 export GOBIN="$GOPATH/bin"
 
-### JS ###
 export NPM_CONFIG_USERCONFIG="$XDG_CONFIG_HOME/npm/npmrc"
 
-### Deno ###
 export DENO_INSTALL="$XDG_DATA_HOME/deno"
 export DENO_INSTALL_ROOT="$DENO_INSTALL"
 
-### aqua ###
 export AQUA_ROOT_DIR="$XDG_DATA_HOME/aqua"
 export AQUA_GLOBAL_CONFIG="$XDG_CONFIG_HOME/aqua/global.yaml"
 export AQUA_PROGRESS_BAR=true
 
-### sheldon ###
 export SHELDON_CONFIG_DIR="$ZDOTDIR/sheldon"
 
-### pass ###
 export PASSWORD_STORE_DIR="$XDG_DATA_HOME/pass"
 
-### AWS ###
 export AWS_CONFIG_FILE="$XDG_CONFIG_HOME/aws/config"
 export AWS_VAULT_PASS_PREFIX="aws-vault"
 export AWS_VAULT_BACKEND=pass
 
 {{ if eq .chezmoi.os "linux" -}}
-### Docker ###
 # NOTE: docker desktop は $HOME 直下にしか作られない
 export DOCKER_CONFIG="$XDG_CONFIG_HOME/docker"
 {{- end }}
@@ -50,10 +40,8 @@ export DOCKER_CONFIG="$XDG_CONFIG_HOME/docker"
 export SSH_AUTH_SOCK={{ printf "%s/%s" .chezmoi.homeDir .onepassword.sshAgentSocket | squote }}
 {{- end }}
 
-### dotnet###
 export DOTNET_CLI_HOME="$XDG_DATA_HOME/dotnet"
 
-### TLS ###
 {{- $caBundle := printf "%s/etc/ca-certificates/cert.pem" (.brew.path | dir | dir) }}
 if [[ -r {{ $caBundle }} ]]; then
     export SSL_CERT_FILE={{ $caBundle }}

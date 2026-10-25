@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 [chezmoi](https://www.chezmoi.io/) で管理する dotfiles のソースディレクトリ。ビルドは存在しないが、CI (`.github/workflows/ci.yml`) が macOS (arm64/amd64) と Ubuntu の各ランナーで全テンプレート (`*.tmpl` と `.chezmoiignore` / `.chezmoiremove`) の `chezmoi execute-template` 検証・展開後スクリプトの shellcheck・`.chezmoidata` のデータ構文チェックに加え、使い捨ての一時ディレクトリへの `chezmoi apply` (`--exclude scripts`) まで行う。対象 OS は macOS (Intel / Apple Silicon) と Ubuntu で、OS 差分は Go テンプレートで吸収する。
 
-apply まで回すのは、属性プレフィックス (`create_` / `executable_`) の誤りや `.chezmoiignore` のパターンずれがテンプレート展開では捕まらないため。実体は `.github/scripts/verify-apply.sh` で、何をどういう理由で見ているかはそのスクリプトのコメントに書いてある。**引数なしで手元から実行できる**ので、CI が落ちたらまずこれを走らせる。配置先だけでなく chezmoi.toml と永続ステートも使い捨ての一時ディレクトリに作る (`--config` / `--persistent-state`) ので、`$HOME` の状態には触らないし、`chezmoi init` していないクローンでも CI と同じ条件で回る。
+apply まで回すのは、属性プレフィックス (`create_` / `executable_`) の誤りや `.chezmoiignore` のパターンずれがテンプレート展開では捕まらないため。実体は `.github/scripts/verify-apply.sh`。引数なしで手元から実行できるので、CI が落ちたらまずこれを走らせる。配置先だけでなく chezmoi.toml と永続ステートも使い捨ての一時ディレクトリに作る (`--config` / `--persistent-state`) ので、`$HOME` の状態には触らないし、`chezmoi init` していないクローンでも CI と同じ条件で回る。
 
 **`--destination` だけでは `$HOME` から切り離せない**点に注意。永続ステート (`~/.config/chezmoi/chezmoistate.boltdb`) の参照先は変わらないままなので、`--persistent-state` も一緒に渡す必要がある。
 
@@ -33,7 +33,7 @@ chezmoi data              # テンプレートで参照できる変数の一覧
 - `executable_foo` → 実行ビットを立てて配置 (例: `dot_config/borders/executable_bordersrc`)
 - `*.tmpl` → Go テンプレートとして展開してから配置 (拡張子は落ちる)
 - `.chezmoiignore` / `.chezmoiremove` / `.chezmoi.toml.tmpl` / `.chezmoiscripts/` / `.chezmoidata/` / `.chezmoiversion` は chezmoi 自身の設定で、ホームには配置されない
-- `.chezmoiremove` に書いたパスは `chezmoi apply` で**削除される**。ソースから消しただけでは配置済みファイルは残るため、その後始末に使う (全環境に行き渡ったらエントリごと消してよい)
+- `.chezmoiremove` に書いたパスは `chezmoi apply` で削除される。ソースから消しただけでは配置済みファイルは残るため、その後始末に使う (全環境に行き渡ったらエントリごと消してよい)
 
 ## chezmoi の最低バージョン (`.chezmoiversion`)
 
@@ -41,7 +41,7 @@ chezmoi data              # テンプレートで参照できる変数の一覧
 で apply すると、意味の分かりにくいテンプレートエラーではなく「バージョンが古い」という
 明確なエラーで止まる。
 
-現在の値は **2.34.2**。根拠は `.chezmoidata/` を**ディレクトリ**として使っている点で、
+現在の値は 2.34.2。根拠は `.chezmoidata/` をディレクトリとして使っている点で、
 ディレクトリ対応が 2.34.0、そこに複数ファイルを置けるようになったのが 2.34.2。
 `promptBoolOnce` (2.20.0) など他の依存はこれより古い。
 
@@ -54,24 +54,24 @@ chezmoi data              # テンプレートで参照できる変数の一覧
 テンプレート変数の実体は 2 箇所にあり、chezmoi が両者を再帰的にマージする。
 
 1. `.chezmoidata/` 以下のデータファイル (chezmoi が `.yaml` / `.yml` / `.json` / `.toml` をすべて読む)
-   - `packages.yaml` — インストールするパッケージ一覧 (`brew.packages` の `common` / `mac` / `cask.common`)。**パッケージを追加する場合はここを編集する。**
-   - `onepassword.yaml` — 1Password の SSH agent ソケットのパスと、`onepasswordRead` に渡すアカウント。いずれも複数箇所から参照されるので、値をここに寄せている
-2. `.chezmoi.toml.tmpl` が生成する `~/.config/chezmoi/chezmoi.toml` — prompt や OS 判定に依存して `.chezmoidata` に置けないもの:
-   - `[data.brew.packages.cask] external` / `installExternal` — `chezmoi init` 時の `promptBoolOnce` で入れるか選ばせる。回答は `installExternal` として書き出され、次回以降の `chezmoi init` はそれを引き継ぐので再質問されない (質問し直したい場合は `chezmoi.toml` からこのキーを消す)
-   - `[data.brew] path` — OS/アーキテクチャごとの brew パス (`/opt/homebrew`, `/usr/local`, `/home/linuxbrew/.linuxbrew`)。`sync.zsh.tmpl` はここから prefix を導出して `brew shellenv` 相当を焼き込む
-   - `[data] work` — 仕事マシンかどうか。同じく `promptBoolOnce` で聞いて書き出す。`private_work.zsh.tmpl` が仕事用設定を置くかどうかの分岐に使う (後述)
+   - `packages.yaml`: インストールするパッケージ一覧 (`brew.packages` の `common` / `mac` / `cask.common`)。**パッケージを追加する場合はここを編集する。**
+   - `onepassword.yaml`: 1Password の SSH agent ソケットのパスと、`onepasswordRead` に渡すアカウント。いずれも複数箇所から参照されるので、値をここに寄せている
+2. `.chezmoi.toml.tmpl` が生成する `~/.config/chezmoi/chezmoi.toml`。prompt や OS 判定に依存して `.chezmoidata` に置けない値を置く。
+   - `[data.brew.packages.cask] external` / `installExternal`: `chezmoi init` 時の `promptBoolOnce` で入れるか選ばせる。回答は `installExternal` として書き出され、次回以降の `chezmoi init` はそれを引き継ぐので再質問されない (質問し直したい場合は `chezmoi.toml` からこのキーを消す)
+   - `[data.brew] path`: OS/アーキテクチャごとの brew パス (`/opt/homebrew`, `/usr/local`, `/home/linuxbrew/.linuxbrew`)。`sync.zsh.tmpl` はここから prefix を導出して `brew shellenv` 相当を焼き込む
+   - `[data] work`: 仕事マシンかどうか。同じく `promptBoolOnce` で聞いて書き出す。`private_work.zsh.tmpl` が仕事用設定を置くかどうかの分岐に使う (後述)
 
-**`promptBoolOnce` を追加・文言変更したら `.github/workflows/ci.yml` の `--promptBool` も直すこと。** CI には TTY が無いので、渡し忘れると `chezmoi init` がプロンプトで落ちる。加えて `--promptBool` は文言が一致しなくてもエラーにならず黙って false になるため、CI 側で両分岐の展開結果をアサートしている。
+**`promptBoolOnce` を追加・文言変更したら `.github/workflows/ci.yml` の `--promptBool` も直すこと。** CI には TTY が無いので、渡し忘れると `chezmoi init` がプロンプトで落ちる。加えて `--promptBool` は文言が一致しなくてもエラーにならず false として扱われるため、CI 側で両分岐の展開結果をアサートしている。
 
 `.chezmoidata/` は chezmoi が毎回自動で読むので、1 を編集した場合は `chezmoi apply` するだけで反映される。
 
 **一方 `.chezmoi.toml.tmpl` (2) を変更しても既存環境の `chezmoi.toml` は自動更新されない。** 反映には `chezmoi init` の再実行が必要。
 
-なお **`chezmoi.toml` の `data` は `.chezmoidata` より優先される**。両者で同じキーを定義すると `.chezmoidata` 側がエラーにならず静かに無視されるので、キーを重複させないこと。
+なお **`chezmoi.toml` の `data` は `.chezmoidata` より優先される**。両者で同じキーを定義すると `.chezmoidata` 側がエラーにならずに無視されるので、キーを重複させないこと。
 
 ## zsh 設定の構造
 
-XDG 準拠のため `ZDOTDIR` を `~/.config/zsh` に寄せている。読み込み経路:
+XDG 準拠のため `ZDOTDIR` を `~/.config/zsh` に寄せている。読み込み経路は次のとおり。
 
 ```
 ~/.zshenv (dot_zshenv.tmpl)      XDG 変数と ZDOTDIR を定義し $ZDOTDIR/.zshenv を source
@@ -79,12 +79,12 @@ XDG 準拠のため `ZDOTDIR` を `~/.config/zsh` に寄せている。読み込
        └─ ~/.config/zsh/.zshrc    sync.zsh を source → sheldon で残りを非同期ロード
 ```
 
-- `sync.zsh.tmpl` — 起動時に同期実行が必要なもの (PATH 構築、brew の環境変数、history、setopt)
-- `sheldon/plugins.toml` — プラグイン管理。`zsh-defer` を使った `defer` テンプレートで大半を遅延ロードする
-- `hooks/async.zsh.tmpl` — エイリアスと mise 有効化。sheldon の `[plugins.async]` から遅延 source される
-- `hooks/zeno-pre.zsh` / `zeno-post.zsh` — zeno の環境変数とキーバインド。プラグインの `hooks.pre` / `hooks.post` から呼ばれる
+- `sync.zsh.tmpl`: 起動時に同期実行が必要なもの (PATH 構築、brew の環境変数、history、setopt)
+- `sheldon/plugins.toml`: プラグイン管理。`zsh-defer` を使った `defer` テンプレートで大半を遅延ロードする
+- `hooks/async.zsh.tmpl`: エイリアスと mise 有効化。sheldon の `[plugins.async]` から遅延 source される
+- `hooks/zeno-pre.zsh` / `zeno-post.zsh`: zeno の環境変数とキーバインド。プラグインの `hooks.pre` / `hooks.post` から呼ばれる
 
-zsh の状態ファイル (`HISTFILE` と `zcompdump`) は `$XDG_STATE_HOME/zsh/` にまとめる。**このディレクトリを作るのは `sync.zsh.tmpl` だけ**なので、`.zshrc` での `sync.zsh` → `sheldon source` の順序を崩さないこと。崩すと compinit が dump を黙って作らず毎回フルスキャンに戻る (エラーは出ない)。
+zsh の状態ファイル (`HISTFILE` と `zcompdump`) は `$XDG_STATE_HOME/zsh/` にまとめる。**このディレクトリを作るのは `sync.zsh.tmpl` だけ**なので、`.zshrc` での `sync.zsh` → `sheldon source` の順序を崩さないこと。崩すと compinit がエラーを出さずに dump を作らなくなり、毎回フルスキャンに戻る。
 
 配置先を変えるときは `run_once_after_0N_migrate_*.sh.tmpl` を 1 本足して既存環境のファイルを移す (irb / zsh 履歴の前例がある)。移行スクリプトは apply 時にまだ `~/.zshenv` が読まれていない前提で、`XDG_*` ではなく `.chezmoi.destDir` からパスを組み立てる。
 
@@ -98,11 +98,11 @@ zsh の状態ファイル (`HISTFILE` と `zcompdump`) は `$XDG_STATE_HOME/zsh/
 
 `sync.zsh` と `.zshrc` は対話シェルの起動ごとに走るので、**ここに `eval "$(...)"` を足さない**。値が静的なら chezmoi の展開時に焼き込み、生成物ならキャッシュして source する (`brew shellenv` と `sheldon source` がそれぞれの前例)。制約は対話シェルの起動経路だけの話で、apply 時に一度動く `.chezmoiscripts/` が `eval "$(brew shellenv)"` を使うのは問題ない。
 
-焼き込みとキャッシュには、それぞれ黙って壊れる罠がある:
+焼き込みとキャッシュには、それぞれエラーを出さずに壊れるケースがある。
 
 - **焼き込みに chezmoi の `output` 関数は使えない。** `brew shellenv` は PATH の先頭が既に brew の `bin`/`sbin` だと何も出力しない (`Library/Homebrew/cmd/shellenv.sh` の冒頭)。brew を通したシェルから apply すると空文字列が焼き込まれ、エラーも出ないまま PATH が壊れる。brew 側の出力が変わったときは `env -i PATH=/usr/bin:/bin "$(command -v brew)" shellenv zsh` (PATH を汚さない状態で叩く) と突き合わせて追随する。
 - **キャッシュを無名関数などに包まないこと。** `pure` のように defer せず直接 source されるプラグインの `typeset` が関数ローカルになり、グローバルに置いたつもりの変数が消える。
-- **`sheldon source` の終了ステータスは信用できない。** 取得に失敗したプラグインを黙って落とした出力を吐いて exit 0 する (ERROR は stderr に出るだけ)。欠けた出力をそのまま焼くと mtime だけ新しくなり、次に `plugins.toml` を編集するまで直らない。`sheldon lock` は同じ状況で非 0 を返すのでゲートに使う。
+- **`sheldon source` の終了ステータスは信用できない。** 取得に失敗したプラグインを除いた出力を吐いて exit 0 する (ERROR は stderr に出るだけ)。欠けた出力をそのまま焼くと mtime だけ新しくなり、次に `plugins.toml` を編集するまで直らない。`sheldon lock` は同じ状況で非 0 を返すので、キャッシュを作り直してよいかの判定に使う。
 - **キャッシュは書けてから `mv` で差し替えること。** source されている当のファイルを直接 truncate すると、同時に起動した別のシェルが途中まで書かれたスクリプトを読む。書き損ねたキャッシュが mtime だけ新しくなるのも防げる。
 
 ### 仕事用の設定の分離
@@ -121,9 +121,9 @@ zsh の状態ファイル (`HISTFILE` と `zcompdump`) は `$XDG_STATE_HOME/zsh/
 
 Go / Node / Ruby / uv などのランタイムは mise に一本化しており、バージョンは `dot_config/mise/config.toml` が唯一の情報源。mise 本体は brew bundle で入り、`.chezmoiscripts/run_onchange_after_04_install_mise_tools.sh.tmpl` が `chezmoi apply` の中で `mise install` まで済ませる。
 
-このスクリプトが `run_once_` ではなく `run_onchange_` なのは、再実行判定が**展開後のスクリプト本文のハッシュ**で行われるため。`run_once_` だと `dot_config/mise/config.toml` のバージョンを上げても本文が変わらず再実行されず、新しい config が配置されたのにランタイムが入らない状態になる。本文に `include "dot_config/mise/config.toml" | sha256sum` のテンプレート呼び出しをコメントとして埋めて、config の変更を再実行の契機にしている。`run_once_` のままハッシュだけ埋めても変更時には走るが、`run_once_` は過去に実行した本文をすべて記憶しているため**バージョンを前の値に戻したときに再実行されない**。`run_onchange_` は直前の本文としか比較しないので revert でも走る。ランタイム以外にも「ソースの別ファイルの変更で再実行したいスクリプト」を書く場合は同じ手を使う。
+このスクリプトが `run_once_` ではなく `run_onchange_` なのは、再実行判定が展開後のスクリプト本文のハッシュで行われるため。`run_once_` だと `dot_config/mise/config.toml` のバージョンを上げても本文が変わらず再実行されず、新しい config が配置されたのにランタイムが入らない状態になる。本文に `include "dot_config/mise/config.toml" | sha256sum` のテンプレート呼び出しをコメントとして埋めて、config の変更を再実行の契機にしている。`run_once_` のままハッシュだけ埋めても変更時には走るが、`run_once_` は過去に実行した本文をすべて記憶しているためバージョンを前の値に戻したときに再実行されない。`run_onchange_` は直前の本文としか比較しないので revert でも走る。ランタイム以外にも「ソースの別ファイルの変更で再実行したいスクリプト」を書く場合は同じ手を使う。
 
-**`mise use -g` は使わないこと。** 書き込み先が `~/.config/mise/config.toml` そのものなので、その場では切り替わっても次の `chezmoi apply` でソース側の内容に静かに巻き戻る (`chezmoi update` を回していると特に気づきにくい)。バージョンを変えるときはソースの `dot_config/mise/config.toml` を編集して apply する。
+**`mise use -g` は使わないこと。** 書き込み先が `~/.config/mise/config.toml` そのものなので、その場では切り替わっても次の `chezmoi apply` でソース側の内容に巻き戻る (`chezmoi update` を回していると特に気づきにくい)。バージョンを変えるときはソースの `dot_config/mise/config.toml` を編集して apply する。
 
 `mise activate` の auto-install (`not_found_auto_install`) は対話シェルでコマンドを叩いたときしか効かない。Neovim から起動する LSP や Makefile 経由の実行はそれでは救えないため、apply 時の `mise install` を省略しない。
 
@@ -131,13 +131,13 @@ Go / Node / Ruby / uv などのランタイムは mise に一本化しており�
 
 - インストール: `.chezmoidata/packages.yaml` の cask (`1password` / `1password-cli`) で入る
 - SSH agent: `dot_config/zsh/dot_zshenv.tmpl` で `SSH_AUTH_SOCK` を 1Password の agent.sock に向けている (darwin のみ)。ソケットのパスは `.chezmoidata/onepassword.yaml` が唯一の情報源で、zshenv と後述のチェックスクリプトの両方がここを参照する
-- コミット署名: `dot_config/git/config.tmpl` で `gpg.format = ssh` + `commit.gpgsign = true`。署名プログラム (`op-ssh-sign`) は macOS なら**無条件で**設定する (Linux では未設定)。`op-ssh-sign` は CLI ではなく 1Password.app の同梱物なので `lookPath "op"` で分岐しない。インストール済みかどうかも見ない — ファイルの配置は brew bundle (`run_once_after_02`) より前に走るため、初回 apply では必ず「未インストール」と判定され、`gpgsign = true` だけが効いた署名できない状態になるため。アプリが無いケースの案内は `run_after_06_check_1password_ssh_agent` が毎回の apply で出す
+- コミット署名: `dot_config/git/config.tmpl` で `gpg.format = ssh` + `commit.gpgsign = true`。署名プログラム (`op-ssh-sign`) は macOS なら無条件で設定する (Linux では未設定)。`op-ssh-sign` は CLI ではなく 1Password.app の同梱物なので `lookPath "op"` で分岐しない。インストール済みかどうかも見ない。ファイルの配置は brew bundle (`run_once_after_02`) より前に走るため、初回 apply では必ず「未インストール」と判定され、`gpgsign = true` だけが効いた署名できない状態になるため。アプリが無いケースの案内は `run_after_06_check_1password_ssh_agent` が毎回の apply で出す
 
-**SSH agent の有効化そのものは自動化していない。** トグルの実体は 1Password の `settings.json` (`sshAgent.enabled`) だが、初回サインインを済ませるまでこのファイルが存在せず (サインインは GUI 必須)、アプリ起動中の書き換えはメモリ上の状態に上書きされ、かつ非公式フォーマットなのでキー名がアップデートで黙って変わりうる。
+**SSH agent の有効化そのものは自動化していない。** トグルの実体は 1Password の `settings.json` (`sshAgent.enabled`) だが、初回サインインを済ませるまでこのファイルが存在せず (サインインは GUI 必須)、アプリ起動中の書き換えはメモリ上の状態に上書きされ、かつ非公式フォーマットなのでキー名がアップデートで予告なく変わりうる。
 
 代わりに `run_after_06_check_1password_ssh_agent.sh.tmpl` が apply のたびに agent.sock の有無を見て、無効なら有効化手順を stderr に出す。有効なら無音、どのケースでも `exit 0` で apply は止めない。`run_once_` にしないのは、初回 apply の時点ではまだサインインが済んでおらず、一度きりの警告だと有効化し忘れたまま気づけなくなるため。
 
-このスクリプトだけ **darwin 限定の方法が他と違う**。他のスクリプトはテンプレートの `{{ if eq .chezmoi.os "darwin" }}` で本文を空にしているが、これは毎回走る `run_after_` なので、それだと Linux で apply のたびに空のプロセスが起きる。代わりに `.chezmoiignore` でスクリプトごと除外している。**`.chezmoiignore` に書くパターンはソース名ではなく展開後のターゲット名** (`.chezmoiscripts/06_check_1password_ssh_agent.sh`) で、ソース名を書いても一致せず静かに無視される。効いているかは `chezmoi managed --include=scripts` で確認できる。`chezmoi ignored` を使うともっと直接的で、**実在するエントリを実際に抑止したパターンしか出てこない**ので、ソース名で書いてしまったパターンは一覧から消える。CI (`.github/scripts/verify-apply.sh`) はこの性質を使って、OS ごとの ignored 一覧が想定と一致することをアサートしている。
+このスクリプトだけ darwin 限定の方法が他と違う。他のスクリプトはテンプレートの `{{ if eq .chezmoi.os "darwin" }}` で本文を空にしているが、これは毎回走る `run_after_` なので、それだと Linux で apply のたびに空のプロセスが起きる。代わりに `.chezmoiignore` でスクリプトごと除外している。**`.chezmoiignore` に書くパターンはソース名ではなく展開後のターゲット名** (`.chezmoiscripts/06_check_1password_ssh_agent.sh`) で、ソース名を書いても一致せず、エラーも出ずに無視される。効いているかは `chezmoi managed --include=scripts` で確認できる。`chezmoi ignored` を使うともっと直接的で、実在するエントリを実際に抑止したパターンしか出てこないので、ソース名で書いてしまったパターンは一覧から消える。CI (`.github/scripts/verify-apply.sh`) はこの性質を使って、OS ごとの ignored 一覧が想定と一致することをアサートしている。
 
 ## 変更時の注意
 

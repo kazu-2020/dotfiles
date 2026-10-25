@@ -37,12 +37,10 @@ if command -v eza >/dev/null 2>&1; then
 fi
 
 
-### mise ###
 if command -v mise >/dev/null 2>&1; then
   eval "$(mise activate zsh)"
 fi
 
 {{ if eq .chezmoi.os "linux" -}}
-# ubuntu でパスフレーズの入力画面を出力するためのおまじない
 export GPG_TTY=$TTY
 {{ end -}}

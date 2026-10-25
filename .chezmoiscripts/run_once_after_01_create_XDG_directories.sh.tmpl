@@ -1,10 +1,6 @@
 #!/bin/sh
 set -eu
 
-# 初回インストール時はまだ ~/.zshenv が読まれていないため XDG 変数が未定義。
-# 環境変数に頼らず、chezmoi が知っている適用先からパスを組み立てる。
-# ここで作るのは「適用先」のディレクトリ群なので homeDir ではなく destDir を使う
-# (--destination で試し適用したときに実ホームを触らないようにするため)。
 dest={{ .chezmoi.destDir | squote }}
 
 mkdir -p "$dest/.config" "$dest/.local/share" "$dest/.local/state" "$dest/.cache"

@@ -1,5 +1,4 @@
 snippets:
-  # git
   - name: git
     keyword: g
     snippet: git
@@ -13,32 +12,5 @@ snippets:
   - name: git log
     keyword: l
     snippet: log --oneline --abbrev-commit --date=iso
-    # --abbrev-commit : コミットのハッシュを頭の7バイトに短縮
-    # --date-iso : 2015-04-14 13:20:45 表示にする
     context:
       lbuffer: '^git\s'
-#   # docker compose
-#   - name: up
-#     keyword: dcu
-#     snippet: docker compose up
-
-#   - name: down
-#     keyword: dcd
-#     snippet: docker compose down
-
-#   - name: build
-#     keyword: dcb
-#     snippet: docker compose build
-
-#   - name: exec
-#     keyword: dce
-#     snippet: docker compose exec {{service_name}}
-
-# completions:
-#   # simple sourceCommand, no callback
-#   - name: kill signal
-#     patterns:
-#       - '^kill -s $' # パターンが "kill -s " で終わるコマンドにマッチ
-#     sourceCommand: "kill -l | tr ' ' '\\n'" # 補完候補を生成するコマンド
-#     options:
-#       --prompt: "'Kill Signal> '" # 補完時のプロンプト

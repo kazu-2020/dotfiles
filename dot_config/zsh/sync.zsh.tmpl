@@ -1,12 +1,8 @@
-### locale ###
 export LANG="en_US.UTF-8"
 
-# 通常は ~/.zshenv が定義済み。未定義でも HISTFILE などが / 直下を指さないようにする。
-# sync.zsh は .zshrc より先に読まれる唯一の場所なので、XDG の既定値はここに集める
 : "${XDG_STATE_HOME:=$HOME/.local/state}"
 : "${XDG_CACHE_HOME:=$HOME/.cache}"
 
-### uniq path ###
 typeset -gU PATH path
 typeset -gU FPATH fpath
 
@@ -38,21 +34,13 @@ path=(
     "$path[@]"
 )
 
-{{/* prefix は .brew.path (.chezmoi.toml.tmpl が OS/アーキテクチャごとに決める) から
-       導出する。値を持たせると path と食い違いうるので、単一の情報源から引く。
-       repository は brew が bin/brew の symlink を解決して決めるもので、実体を置く
+{{/* repository は brew が bin/brew の symlink を解決して決めるもので、実体を置く
        /opt/homebrew だけ prefix と一致し、他 (Intel / linuxbrew) は $prefix/Homebrew */ -}}
 {{- $brewPrefix := .brew.path | dir | dir -}}
 {{- $brewRepository := ternary $brewPrefix (printf "%s/Homebrew" $brewPrefix) (eq $brewPrefix "/opt/homebrew") -}}
-### brew ###
-# `brew shellenv` の出力を chezmoi の展開時に焼き込んだもの。起動のたびに brew
-# (bash スクリプト) を fork せずに済む。macOS 14+ の shellenv は PATH の構築を
-# path_helper に投げるので、素直に eval すると 1 起動あたり 3 プロセス増える。
-#
-# 焼き込みに chezmoi の output 関数は使えない。shellenv は PATH の先頭が既に
-# brew の bin/sbin だと何も出力しない仕様なので、brew を通したシェルから apply
-# すると空文字列が焼き込まれ、エラーも出ないまま PATH が壊れる。追随のしかたは
-# CLAUDE.md の「起動時に外部コマンドを呼ばない」を参照。
+# brew shellenv の出力を焼き込んだもの。焼き込みに chezmoi の output 関数は使えない。shellenv は
+# PATH の先頭が既に brew の bin/sbin だと何も出力しないので、brew を通したシェルから apply すると
+# 空文字列が焼き込まれ、エラーも出ないまま PATH が壊れる
 export HOMEBREW_PREFIX={{ $brewPrefix | quote }}
 export HOMEBREW_CELLAR={{ printf "%s/Cellar" $brewPrefix | quote }}
 export HOMEBREW_REPOSITORY={{ $brewRepository | quote }}
@@ -74,18 +62,11 @@ path=(
     "$path[@]"
 )
 
-### prompt (pure) ###
 # pure はデフォルトでプロンプトのたびに裏で git fetch する。非同期なので描画は
 # ブロックしないが、ネットワークアクセスと認証が回り続けるので切る。
-#
-# pure 本体は sheldon が defer せずに読む。この変数は precmd ごとに参照されるので
-# 最初のプロンプトまでに評価されていればよく、sheldon より前のここで設定する。
 export PURE_GIT_PULL=0
 
-### history ###
-# zcompdump と同じ $XDG_STATE_HOME/zsh/ に置く。ディレクトリが無いと zsh は履歴を
-# 保存できないので、ここで作る (sheldon より前に読まれる唯一の場所)。
-# 2 回目以降の起動で fork しないよう組み込みの [[ -d ]] でガードする。
+# ディレクトリが無いと zsh は履歴を保存できない
 [[ -d $XDG_STATE_HOME/zsh ]] || mkdir -p $XDG_STATE_HOME/zsh
 
 export HISTFILE="$XDG_STATE_HOME/zsh/history"
@@ -101,20 +82,12 @@ setopt hist_reduce_blanks
 setopt hist_save_no_dups
 setopt hist_verify
 
-# 失敗したコマンドを履歴ファイルに残さない。
-# zshaddhistory の時点では終了ステータスが分からないため、いったん保存を保留し
-# (return 1)、precmd で成功していた場合だけ内部履歴へ入れて fc -AI で即時追記する。
+# zshaddhistory の時点では終了ステータスが分からないため、いったん保存を保留し (return 1)、
+# precmd で成功していた場合だけ内部履歴へ入れて fc -AI で即時追記する。
 # inc_append_history(_time) は fc -AI との二重書き込みで重複が出るため使わない。
-#
-# 制約:
-# - extended_history のタイムスタンプは終了時刻になり、経過時間は常に 0 になる
-# - 失敗したコマンドを ↑ で呼び出せるのは直後の 1 回だけ (打ち直し用)
-# - この 2 つの hook が唯一の zshaddhistory 消費者である前提。行を破棄する
-#   フィルタ hook を追加する場合は __defer_hist_write 側にも同じ条件を足すこと
 autoload -Uz add-zsh-hook
 
 __defer_hist_write() {
-    # 先頭スペースの行は hist_ignore_space に任せる
     [[ -o hist_ignore_space && $1 == \ * ]] && return 0
     typeset -g __deferred_hist_line="${1%%$'\n'}"
     return 1
@@ -122,7 +95,6 @@ __defer_hist_write() {
 
 __save_hist_if_ok() {
     local last_status=$?
-    # シグナルで中断されたコマンド (^C や ^Z など: 128 超) は失敗扱いにしない
     if [[ -n $__deferred_hist_line ]] && (( last_status == 0 || last_status > 128 )); then
         local line="$__deferred_hist_line"
         # print -S は hist_reduce_blanks を通らないため単一行のみ自前で正規化する
@@ -139,24 +111,21 @@ __save_hist_if_ok() {
 add-zsh-hook zshaddhistory __defer_hist_write
 add-zsh-hook precmd __save_hist_if_ok
 
-# cd options
 setopt auto_cd
 setopt auto_pushd
 setopt pushd_ignore_dups
 setopt pushd_to_home
 
-# no beep
 setopt no_beep
 setopt no_list_beep
 setopt no_hist_beep
 
-# misc
-setopt rm_star_wait      # confirm rm star
-setopt ignore_eof        # disable ^d (use 'exit', 'logout')
-setopt magic_equal_subst # enable to expand ~ after = e.g.) --prefix=~/local
-setopt no_case_glob      # ignore case when glob
-setopt extended_glob     # use '*, ~, ^' as regular expression
-setopt auto_remove_slash # automatically delete slash complemented by supplemented by inserting a space
-setopt mark_dirs         # if the path is directory, add '/' to path tail when generating path by glob
-setopt print_eight_bit   # support japanese file name
-setopt no_flow_control   # disable ^s
+setopt rm_star_wait
+setopt ignore_eof
+setopt magic_equal_subst
+setopt no_case_glob
+setopt extended_glob
+setopt auto_remove_slash
+setopt mark_dirs
+setopt print_eight_bit
+setopt no_flow_control
